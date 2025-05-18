@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Twitch Extension Panel</title>
+    <script src="https://extension-files.twitch.tv/helper/v1/twitch-ext.min.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 10px;
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            background-color: rgba(0, 0, 0, 0.6);
+            color: white;
+        }
+        .title {
+            font-size: 18px;
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+        .secondary-title {
+            font-size: 16px;
+            margin-top: 15px;
+            margin-bottom: 10px;
+            color: #a970ff;
+        }
+        .button-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .button {
+            background-color: #9147ff;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.2s;
+        }
+        .button:hover {
+            background-color: #772ce8;
+        }
+    </style>
+</head>
+<body>
+    <div id="main-title" class="title"></div>
+    <div id="button-container" class="button-container"></div>
+    <div id="secondary-title" class="secondary-title" style="display: none;"></div>
+    <div id="secondary-button-container" class="button-container"></div>
+
+    <script>
+        // Инициализация расширения
+        window.Twitch.ext.onAuthorized(function(auth) {
+            console.log('Extension authorized:', auth);
+        });
+
+        // Обработка конфигурации от EBS
+        window.Twitch.ext.configuration.onChanged(function() {
+            const config = window.Twitch.ext.configuration.broadcaster ? 
+                JSON.parse(window.Twitch.ext.configuration.broadcaster.content) : null;
+            
+            if (config) {
+                updateUI(config);
+            }
+        });
+
+        // Обновление UI на основе конфигурации
+        function updateUI(config) {
+            // Основной заголовок
+            if (config.mainTitle) {
+                document.getElementById('main-title').textContent = config.mainTitle;
+            }
+
+            // Основные кнопки
+            const buttonContainer = document.getElementById('button-container');
+            buttonContainer.innerHTML = '';
+            
+            if (config.buttons && config.buttons.length > 0) {
+                config.buttons.forEach(button => {
+                    const btn = document.createElement('button');
+                    btn.className = 'button';
+                    btn.textContent = button.label;
+                    btn.onclick = () => handleButtonClick(button.id);
+                    buttonContainer.appendChild(btn);
+                });
+            }
+
+            // Вторичный заголовок
+            const secondaryTitle = document.getElementById('secondary-title');
+            if (config.secondaryTitle) {
+                secondaryTitle.textContent = config.secondaryTitle;
+                secondaryTitle.style.display = 'block';
+            } else {
+                secondaryTitle.style.display = 'none';
+            }
+
+            // Вторичные кнопки
+            const secondaryButtonContainer = document.getElementById('secondary-button-container');
+            secondaryButtonContainer.innerHTML = '';
+            
+            if (config.secondaryButtons && config.secondaryButtons.length > 0) {
+                config.secondaryButtons.forEach(button => {
+                    const btn = document.createElement('button');
+                    btn.className = 'button';
+                    btn.textContent = button.label;
+                    btn.onclick = () => handleButtonClick(button.id);
+                    secondaryButtonContainer.appendChild(btn);
+                });
+            }
+        }
+
+        // Обработка нажатия кнопки
+        function handleButtonClick(buttonId) {
+            // Отправка события через Twitch EventSub
+            window.Twitch.ext.send('broadcast', 'application/json', {
+                action: 'button_click',
+                button_id: buttonId,
+                timestamp: new Date().toISOString()
+            });
+            
+            console.log('Button clicked:', buttonId);
+        }
+    </script>
+</body>
+</html>

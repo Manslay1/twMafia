@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Extension Configuration</title>
+    <script src="https://extension-files.twitch.tv/helper/v1/twitch-ext.min.js"></script>
+    <style>
+        body {
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            padding: 20px;
+        }
+        .config-section {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+        }
+        input, textarea {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 10px;
+        }
+        button {
+            background-color: #9147ff;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="config-section">
+        <h2>Extension Configuration</h2>
+        <label for="mainTitle">Main Title:</label>
+        <input type="text" id="mainTitle" placeholder="Enter main title">
+        
+        <label for="secondaryTitle">Secondary Title (optional):</label>
+        <input type="text" id="secondaryTitle" placeholder="Enter secondary title">
+        
+        <button id="saveConfig">Save Configuration</button>
+    </div>
+
+    <script>
+        // Инициализация расширения
+        window.Twitch.ext.onAuthorized(function(auth) {
+            console.log('Config authorized:', auth);
+        });
+
+        // Загрузка текущей конфигурации
+        if (window.Twitch.ext.configuration.broadcaster) {
+            const config = JSON.parse(window.Twitch.ext.configuration.broadcaster.content);
+            document.getElementById('mainTitle').value = config.mainTitle || '';
+            document.getElementById('secondaryTitle').value = config.secondaryTitle || '';
+        }
+
+        // Сохранение конфигурации
+        document.getElementById('saveConfig').addEventListener('click', function() {
+            const config = {
+                mainTitle: document.getElementById('mainTitle').value,
+                secondaryTitle: document.getElementById('secondaryTitle').value
+            };
+            
+            window.Twitch.ext.configuration.set('broadcaster', '1.0', JSON.stringify(config));
+        });
+    </script>
+</body>
+</html>
