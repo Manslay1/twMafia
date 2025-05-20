@@ -53,10 +53,32 @@
         // Инициализация расширения
         window.Twitch.ext.onAuthorized(function(auth) {
             console.log('Extension authorized:', auth);
+    
+            // Собираем информацию о зрителе
+            const viewerInfo = {
+                userId: auth.userId,
+                username: auth.userName || 'anonymous',
+                isBroadcaster: auth.isBroadcaster,
+                isMod: auth.isMod,
+                action: 'viewer_connected',
+                timestamp: new Date().toISOString()
+            };
+    
+            // Отправляем информацию о зрителе
+            window.Twitch.ext.send('broadcast', 'application/json', viewerInfo);
+        });
+
+        window.Twitch.ext.listen('broadcast', function(target, contentType, message) {
+            console.log('Получено сообщение PubSub:', message);
+            // Можно обновлять UI в ответ на сообщения от C#-программы
         });
 
         // Обработка конфигурации от EBS
         window.Twitch.ext.configuration.onChanged(function() {
+            if(window.Twitch.ext.configuration.viewer) {
+                const config = JSON.parse(window.Twitch.ext.configuration.viewer.content);
+                console.log("Персональное сообщение:", config);
+            }
             const config = window.Twitch.ext.configuration.broadcaster ? 
                 JSON.parse(window.Twitch.ext.configuration.broadcaster.content) : null;
             
@@ -112,10 +134,15 @@
 
         // Обработка нажатия кнопки
         function handleButtonClick(buttonId) {
+            // Получаем информацию о зрителе
+            window.Twitch.ext.onAuthorized(function(auth) {
+                    const username = auth.userName || 'anonymous';
+
             // Отправка события через Twitch EventSub
             window.Twitch.ext.send('broadcast', 'application/json', {
                 action: 'button_click',
                 button_id: buttonId,
+                username: username,
                 timestamp: new Date().toISOString()
             });
             
