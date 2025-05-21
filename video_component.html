@@ -136,17 +136,18 @@
         function handleButtonClick(buttonId) {
             // Получаем информацию о зрителе
             window.Twitch.ext.onAuthorized(function(auth) {
-                    const username = auth.userName || 'anonymous';
+                const username = auth.userName || 'anonymous';
 
-            // Отправка события через Twitch EventSub
-            window.Twitch.ext.send('broadcast', 'application/json', {
-                action: 'button_click',
-                button_id: buttonId,
-                username: username,
-                timestamp: new Date().toISOString()
-            });
+                // Отправка события через Twitch EventSub
+                window.Twitch.ext.send('broadcast', 'application/json', {
+                    action: 'button_click',
+                    button_id: buttonId,
+                    username: username,
+                    timestamp: new Date().toISOString()
+                });
             
-            console.log('Button clicked:', buttonId);
+                console.log('Button clicked:', buttonId);
+            });
         }
     </script>
 </body>
