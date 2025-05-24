@@ -44,7 +44,7 @@
     </style>
 </head>
 <body>
-    <div id="main-title" class="title"></div>
+    <div id="main-title" class="title">Test title</div>
     <div id="button-container" class="button-container"></div>
     <div id="secondary-title" class="secondary-title" style="display: none;"></div>
     <div id="secondary-button-container" class="button-container"></div>
@@ -69,21 +69,19 @@ console.log("sending viewer info");
             window.Twitch.ext.send('broadcast', 'application/json', viewerInfo);
 
 
-        // Обработка конфигурации от EBS
-            window.Twitch.ext.configuration.onChanged(function() {
-console.log("Raw broadcaster config:", window.Twitch.ext.configuration.broadcaster);
-console.log("Raw viewer config:", window.Twitch.ext.configuration.viewer);
-                const config = window.Twitch.ext.configuration.broadcaster 
-                    ? JSON.parse(window.Twitch.ext.configuration.broadcaster.content)
-                    : window.Twitch.ext.configuration.viewer
-                        ? JSON.parse(window.Twitch.ext.configuration.viewer.content)
-                        : null;
-            
-                if (config && config.data) {
-                    console.log("New config received:", config.data);
-                    updateUI(config.data);
-                }
-            });
+window.Twitch.ext.configuration.onChanged(() => {
+        const config = window.Twitch.ext.configuration.broadcaster?.content;
+        console.log('Конфигурация:', config || 'Нет данных');
+        
+        if (config) {
+            try {
+                const parsed = JSON.parse(config);
+                console.log('Parsed config:', parsed);
+            } catch (e) {
+                console.error('Ошибка парсинга:', e);
+            }
+        }
+    });
 
 console.log("requesting config");
             window.Twitch.ext.configuration.set('broadcaster', '0.0.2');
@@ -97,8 +95,8 @@ console.log("requesting config");
 
 
 //TODO: remove
-window.Twitch.ext.listen('log', (_, __, message) => {
-    console.log('Twitch log:', message);
+window.Twitch.ext.listen('*', (type, _, message) => {
+    console.log(`Twitch Event [${type}]:`, message);
 });
 window.Twitch.ext.onError(function(error) {
     console.error('Extension error:', error);
