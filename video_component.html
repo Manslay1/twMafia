@@ -69,20 +69,20 @@
         });
 
         window.Twitch.ext.listen('broadcast', function(target, contentType, message) {
-            console.log('Получено сообщение PubSub:', message);
+            console.log('Received PubSub message:', message);
             // Можно обновлять UI в ответ на сообщения от C#-программы
         });
 
         // Обработка конфигурации от EBS
         window.Twitch.ext.configuration.onChanged(function() {
-            if(window.Twitch.ext.configuration.viewer) {
-                const config = JSON.parse(window.Twitch.ext.configuration.viewer.content);
-                console.log("Персональное сообщение:", config);
-            }
-            const config = window.Twitch.ext.configuration.broadcaster ? 
-                JSON.parse(window.Twitch.ext.configuration.broadcaster.content) : null;
+            const config = window.Twitch.ext.configuration.broadcaster 
+                ? JSON.parse(window.Twitch.ext.configuration.broadcaster.content)
+                : window.Twitch.ext.configuration.viewer
+                    ? JSON.parse(window.Titch.ext.configuration.viewer.content)
+                    : null;
             
             if (config) {
+                console.log("New config received:", config);
                 updateUI(config);
             }
         });
