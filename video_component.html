@@ -63,7 +63,8 @@
                 action: 'viewer_connected',
                 timestamp: new Date().toISOString()
             };
-    
+
+console.log("sending viewer info");    
             // Отправляем информацию о зрителе
             window.Twitch.ext.send('broadcast', 'application/json', viewerInfo);
 
@@ -84,6 +85,7 @@ console.log("Raw viewer config:", window.Twitch.ext.configuration.viewer);
                 }
             });
 
+console.log("requesting config");
             window.Twitch.ext.configuration.set('broadcaster', '0.0.2');
 
         });
