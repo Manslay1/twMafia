@@ -70,7 +70,7 @@ console.log("sending viewer info");
 
         });
 
-        window.Twitch.ext.listen('broadcast', function(target, contentType, message) => {
+        window.Twitch.ext.listen('broadcast', function(target, contentType, message) {
             console.log('Received PubSub message:', message);
             try {
                 const msg = typeof message === 'string' ? JSON.parse(message) : message;
