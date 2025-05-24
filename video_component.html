@@ -13,12 +13,12 @@
             color: white;
         }
         .title {
-            font-size: 18px;
+            font-size: 26px;
             margin-bottom: 10px;
             font-weight: bold;
         }
         .secondary-title {
-            font-size: 16px;
+            font-size: 24px;
             margin-top: 15px;
             margin-bottom: 10px;
             color: #a970ff;
@@ -35,7 +35,7 @@
             padding: 8px 12px;
             border-radius: 4px;
             cursor: pointer;
-            font-size: 14px;
+            font-size: 18px;
             transition: background-color 0.2s;
         }
         .button:hover {
@@ -44,7 +44,7 @@
     </style>
 </head>
 <body>
-    <div id="main-title" class="title">Test title</div>
+    <div id="main-title" class="title"></div>
     <div id="button-container" class="button-container"></div>
     <div id="secondary-title" class="secondary-title" style="display: none;"></div>
     <div id="secondary-button-container" class="button-container"></div>
@@ -66,55 +66,88 @@
 
 console.log("sending viewer info");    
             // Отправляем информацию о зрителе
-    try {
-        window.Twitch.ext.send('broadcast', 'application/json', viewerInfo);
-        console.log('Viewer info sent');
-    } catch (e) {
-        console.error('Error sending:', e);
-    }
+            window.Twitch.ext.send('broadcast', 'application/json', viewerInfo);
 
+        });
 
-window.Twitch.ext.configuration.onChanged(() => {
-        const config = window.Twitch.ext.configuration.broadcaster?.content;
-        console.log('Config:', config || 'Нет данных');
-        
-        if (config) {
+        window.Twitch.ext.listen('broadcast', function(target, contentType, message) => {
+            console.log('Received PubSub message:', message);
             try {
-                const parsed = JSON.parse(config);
-                console.log('Parsed config:', parsed);
+                const msg = typeof message === 'string' ? JSON.parse(message) : message;
+        
+                if (msg.type === 'config_update' && msg.data) {
+                    console.log('Received new config:', msg.data);
+                    currentConfig = msg.data;
+                    updateUI(currentConfig);
+                }
             } catch (e) {
-                console.error('Parsing error:', e);
+                console.error('Message parse error:', e);
+            }
+        });
+
+
+        // Обновление UI на основе конфигурации
+        function updateUI(config) {
+            // Основной заголовок
+            if (config.mainTitle) {
+                document.getElementById('main-title').textContent = config.mainTitle;
+            }
+
+            // Основные кнопки
+            const buttonContainer = document.getElementById('button-container');
+            buttonContainer.innerHTML = '';
+            
+            if (config.buttons && config.buttons.length > 0) {
+                config.buttons.forEach(button => {
+                    const btn = document.createElement('button');
+                    btn.className = 'button';
+                    btn.textContent = button.label;
+                    btn.onclick = () => handleButtonClick(button.id);
+                    buttonContainer.appendChild(btn);
+                });
+            }
+
+            // Вторичный заголовок
+            const secondaryTitle = document.getElementById('secondary-title');
+            if (config.secondaryTitle) {
+                secondaryTitle.textContent = config.secondaryTitle;
+                secondaryTitle.style.display = 'block';
+            } else {
+                secondaryTitle.style.display = 'none';
+            }
+
+            // Вторичные кнопки
+            const secondaryButtonContainer = document.getElementById('secondary-button-container');
+            secondaryButtonContainer.innerHTML = '';
+            
+            if (config.secondaryButtons && config.secondaryButtons.length > 0) {
+                config.secondaryButtons.forEach(button => {
+                    const btn = document.createElement('button');
+                    btn.className = 'button';
+                    btn.textContent = button.label;
+                    btn.onclick = () => handleButtonClick(button.id);
+                    secondaryButtonContainer.appendChild(btn);
+                });
             }
         }
-    });
 
-console.log("requesting config");
-    try {
-            window.Twitch.ext.configuration.set('broadcaster', '0.0.2');
-    } catch (e) {
-        console.error('Error:', e);
-    }
+        // Обработка нажатия кнопки
+        function handleButtonClick(buttonId) {
+            // Получаем информацию о зрителе
+            window.Twitch.ext.onAuthorized(function(auth) {
+                const username = auth.userName || 'anonymous';
 
-
-        });
-
-        window.Twitch.ext.listen('broadcast', function(target, contentType, message) {
-            console.log('Received PubSub message:', message);
-            // Можно обновлять UI в ответ на сообщения от C#-программы
-        });
-
-
-//TODO: remove
-window.Twitch.ext.listen('*', (type, _, message) => {
-    console.log(`Twitch Event [${type}]:`, message);
-});
-window.Twitch.ext.onError(function(error) {
-    console.error('Extension error:', error);
-});
-window.addEventListener('error', function(e) {
-    console.error('Global error:', e.error);
-});
-
+                // Отправка события через Twitch EventSub
+                window.Twitch.ext.send('broadcast', 'application/json', {
+                    action: 'button_click',
+                    button_id: buttonId,
+                    username: username,
+                    timestamp: new Date().toISOString()
+                });
+            
+                console.log('Button clicked:', buttonId);
+            });
+        }
     </script>
 </body>
 </html>
