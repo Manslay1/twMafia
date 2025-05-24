@@ -74,17 +74,20 @@
         });
 
         // Обработка конфигурации от EBS
-        window.Twitch.ext.configuration.onChanged(function() {
-            const config = window.Twitch.ext.configuration.broadcaster 
-                ? JSON.parse(window.Twitch.ext.configuration.broadcaster.content)
-                : window.Twitch.ext.configuration.viewer
-                    ? JSON.parse(window.Titch.ext.configuration.viewer.content)
-                    : null;
+        window.Twitch.ext.onReady(() => {
+            console.log("OnReady triggered");
+            window.Twitch.ext.configuration.onChanged(function() {
+                const config = window.Twitch.ext.configuration.broadcaster 
+                    ? JSON.parse(window.Twitch.ext.configuration.broadcaster.content)
+                    : window.Twitch.ext.configuration.viewer
+                        ? JSON.parse(window.Titch.ext.configuration.viewer.content)
+                        : null;
             
-            if (config) {
-                console.log("New config received:", config);
-                updateUI(config);
-            }
+                if (config) {
+                    console.log("New config received:", config);
+                    updateUI(config);
+                }
+            });
         });
 
         // Обновление UI на основе конфигурации
