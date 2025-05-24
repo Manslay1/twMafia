@@ -66,16 +66,9 @@
     
             // Отправляем информацию о зрителе
             window.Twitch.ext.send('broadcast', 'application/json', viewerInfo);
-        });
 
-        window.Twitch.ext.listen('broadcast', function(target, contentType, message) {
-            console.log('Received PubSub message:', message);
-            // Можно обновлять UI в ответ на сообщения от C#-программы
-        });
 
         // Обработка конфигурации от EBS
-        window.Twitch.ext.onReady(() => {
-            console.log("OnReady triggered");
             window.Twitch.ext.configuration.onChanged(function() {
                 console.log("Config changed!");
                 const config = window.Twitch.ext.configuration.broadcaster 
@@ -84,13 +77,20 @@
                         ? JSON.parse(window.Titch.ext.configuration.viewer.content)
                         : null;
             
-                if (config) {
-                    console.log("New config received:", config);
-                    updateUI(config);
+                if (config && config.data) {
+                    console.log("New config received:", config.data);
+                    updateUI(config.data);
                 }
             });
             window.Twitch.ext.configuration.set('broadcaster', '0.0.2');
+
         });
+
+        window.Twitch.ext.listen('broadcast', function(target, contentType, message) {
+            console.log('Received PubSub message:', message);
+            // Можно обновлять UI в ответ на сообщения от C#-программы
+        });
+
 
 //TODO: remove
 window.Twitch.ext.listen('log', (_, __, message) => {
