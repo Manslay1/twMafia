@@ -90,6 +90,10 @@
             });
         });
 
+        window.addEventListener('error', function(e) {
+            console.error('Global error:', e.error);
+        });
+
         // Обновление UI на основе конфигурации
         function updateUI(config) {
             // Основной заголовок
