@@ -77,6 +77,7 @@
         window.Twitch.ext.onReady(() => {
             console.log("OnReady triggered");
             window.Twitch.ext.configuration.onChanged(function() {
+                console.log("Config changed!");
                 const config = window.Twitch.ext.configuration.broadcaster 
                     ? JSON.parse(window.Twitch.ext.configuration.broadcaster.content)
                     : window.Twitch.ext.configuration.viewer
@@ -88,7 +89,13 @@
                     updateUI(config);
                 }
             });
+            window.Twitch.ext.configuration.set('broadcaster', '0.0.2');
         });
+
+//TODO: remove
+window.Twitch.ext.listen('log', (_, __, message) => {
+    console.log('Twitch log:', message);
+});
 
         window.addEventListener('error', function(e) {
             console.error('Global error:', e.error);
