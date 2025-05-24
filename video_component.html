@@ -70,11 +70,12 @@
 
         // Обработка конфигурации от EBS
             window.Twitch.ext.configuration.onChanged(function() {
-                console.log("Config changed!");
+console.log("Raw broadcaster config:", window.Twitch.ext.configuration.broadcaster);
+console.log("Raw viewer config:", window.Twitch.ext.configuration.viewer);
                 const config = window.Twitch.ext.configuration.broadcaster 
                     ? JSON.parse(window.Twitch.ext.configuration.broadcaster.content)
                     : window.Twitch.ext.configuration.viewer
-                        ? JSON.parse(window.Titch.ext.configuration.viewer.content)
+                        ? JSON.parse(window.Twitch.ext.configuration.viewer.content)
                         : null;
             
                 if (config && config.data) {
@@ -82,6 +83,7 @@
                     updateUI(config.data);
                 }
             });
+
             window.Twitch.ext.configuration.set('broadcaster', '0.0.2');
 
         });
@@ -96,10 +98,12 @@
 window.Twitch.ext.listen('log', (_, __, message) => {
     console.log('Twitch log:', message);
 });
-
-        window.addEventListener('error', function(e) {
-            console.error('Global error:', e.error);
-        });
+window.Twitch.ext.onError(function(error) {
+    console.error('Extension error:', error);
+});
+window.addEventListener('error', function(e) {
+    console.error('Global error:', e.error);
+});
 
         // Обновление UI на основе конфигурации
         function updateUI(config) {
