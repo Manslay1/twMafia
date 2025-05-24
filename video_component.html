@@ -131,19 +131,35 @@ console.log("sending viewer info");
             }
         }
 
+        let lastClickTime = 0;
+
         // Обработка нажатия кнопки
         function handleButtonClick(buttonId) {
+
+            const now = Date.now();
+            if (now - lastClickTime < 500) { // 500ms debounce
+                console.log('Click throttled');
+                return;
+            }
+            lastClickTime = now;
+
             // Получаем информацию о зрителе
             window.Twitch.ext.onAuthorized(function(auth) {
                 const username = auth.userName || 'anonymous';
 
                 // Отправка события через Twitch EventSub
-                window.Twitch.ext.send('broadcast', 'application/json', {
-                    action: 'button_click',
-                    button_id: buttonId,
-                    username: username,
-                    timestamp: new Date().toISOString()
-                });
+                try
+                {
+                    window.Twitch.ext.send('broadcast', 'application/json', {
+                        action: 'button_click',
+                        button_id: buttonId,
+                        username: username,
+                        timestamp: new Date().toISOString(),
+                        _customEvent: true
+                    });
+                } catch (e) {
+                    console.error('Send button click error:', e);
+                }
             
                 console.log('Button clicked:', buttonId);
             });
