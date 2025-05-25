@@ -51,9 +51,12 @@
 
     <script>
         // Инициализация расширения
-        window.Twitch.ext.onAuthorized(function(auth) {
+        window.Twitch.ext.onAuthorized( async (auth) {
             console.log('Extension authorized:', auth);
-    
+if (auth.channelId) {
+    // Отправка сообщения от имени зрителя
+    await window.Twitch.ext.actions.sendChatMessage("test message from extension to chat");
+  }    
             // Собираем информацию о зрителе
             const viewerInfo = {
                 userId: auth.userId,
@@ -64,10 +67,11 @@
                 timestamp: new Date().toISOString()
             };
 
+console.log("User JWT for Helix API calls(check pubsub_perms at jwt.io):", window.Twitch.ext.viewer.helixToken);
 console.log("sending viewer info");    
             // Отправляем информацию о зрителе
             window.Twitch.ext.send('broadcast', 'application/json', viewerInfo);
-
+//window.Twitch.ext.actions.whisper("streamer_nickname", "!cmd Hello!");
         });
 
         window.Twitch.ext.listen('broadcast', function(target, contentType, message) {
@@ -83,9 +87,24 @@ console.log("sending viewer info");
             } catch (e) {
                 console.error('Message parse error:', e);
             }
+
+//trying to get streamer login and send private message
+const streamerLogin = await getStreamerLogin(channelId);
+window.Twitch.ext.actions.whisper(streamerLogin, "secret_code:123");
+
+
         });
 
-
+async function getStreamerLogin(channelId) {
+  const response = await fetch(`https://api.twitch.tv/helix/users?id=${channelId}`, {
+    headers: {
+      "Client-ID": "ваш_client_id",
+      "Authorization": `Bearer ${Twitch.ext.viewer.sessionToken}`
+    }
+  });
+  const data = await response.json();
+  return data.data[0].login;
+}
         // Обновление UI на основе конфигурации
         function updateUI(config) {
             // Основной заголовок
