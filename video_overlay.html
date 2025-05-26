@@ -7,39 +7,43 @@
     <style>
         body {
             margin: 0;
-            padding: 10px 10px 10px 0; /* Уменьшаем правый отступ */
+            padding: 10px 10px 10px 0;
             font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
             background-color: transparent;
             color: white;
             text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
             display: flex;
             flex-direction: column;
-            align-items: flex-start; /* Выравниваем всё по левому краю */
-            width: fit-content; /* Ширина по содержимому */
-            max-width: 100%; /* Но не шире экрана */
+            align-items: flex-start;
+            width: fit-content;
+            max-width: 100%;
         }
+
         .title {
             font-size: 26px;
             margin-bottom: 10px;
             font-weight: bold;
-            text-align: left; /* Выравнивание текста по левому краю */
-            width: 100%; /* Занимает всю доступную ширину */
+            text-align: left;
+            width: 100%;
         }
+
         .secondary-title {
             font-size: 24px;
             margin-top: 15px;
             margin-bottom: 10px;
             color: #a970ff;
-            text-align: left; /* Выравнивание текста по левому краю */
-            width: 100%; /* Занимает всю доступную ширину */
+            text-align: left;
+            width: 100%;
         }
+
         .button-container {
             display: flex;
             flex-wrap: wrap;
             gap: 8px;
-            justify-content: flex-start; /* Кнопки выравниваем по левому краю */
-            width: 100%; /* Занимает всю доступную ширину */
+            justify-content: flex-start;
+            width: 100%;
         }
+
         .button {
             background-color: rgba(145, 71, 255, 0.8);
             color: white;
@@ -49,11 +53,12 @@
             cursor: pointer;
             font-size: 18px;
             transition: background-color 0.2s;
-            white-space: nowrap; /* Текст в кнопках не переносится */
+            white-space: nowrap;
         }
-        .button:hover {
-            background-color: rgba(119, 44, 232, 0.9);
-        }
+
+            .button:hover {
+                background-color: rgba(119, 44, 232, 0.9);
+            }
     </style>
 </head>
 <body>
@@ -63,16 +68,18 @@
     <div id="secondary-button-container" class="button-container"></div>
 
     <script>
-        // Инициализация расширения
+        // РРЅРёС†РёР°Р»РёР·Р°С†РёСЏ СЂР°СЃС€РёСЂРµРЅРёСЏ
         window.Twitch.ext.onAuthorized(async (auth) => {
             console.log('Extension authorized:', auth);
-            
+
+            if (!auth) {
+                console.error('Authorization data is missing');
+                return;
+            }
+
             if (auth.channelId && auth.helixToken) {
                 try {
-                    // Отправка тестового сообщения в чат
-                    //await window.Twitch.ext.actions.sendChatMessage("Extension activated in overlay mode!");
-                    
-                    // Собираем информацию о зрителе
+                    // РЎРѕР±РёСЂР°РµРј РёРЅС„РѕСЂРјР°С†РёСЋ Рѕ Р·СЂРёС‚РµР»Рµ
                     const viewerInfo = {
                         userId: auth.userId,
                         username: auth.userName || 'anonymous',
@@ -82,49 +89,63 @@
                         timestamp: new Date().toISOString()
                     };
 
-                    console.log("User JWT for Helix API calls:", auth.helixToken);
-                    
-                    // Отправляем информацию о зрителе
+                    console.log('User JWT for Helix API calls:', auth.helixToken);
+
+                    // РћС‚РїСЂР°РІР»СЏРµРј РёРЅС„РѕСЂРјР°С†РёСЋ Рѕ Р·СЂРёС‚РµР»Рµ
                     window.Twitch.ext.send('broadcast', 'application/json', viewerInfo);
-                    
-                    // Получаем логин стримера для возможного шепота
+
+                    // РџРѕР»СѓС‡Р°РµРј Р»РѕРіРёРЅ СЃС‚СЂРёРјРµСЂР° РґР»СЏ РІРѕР·РјРѕР¶РЅРѕРіРѕ С€РµРїРѕС‚Р°
                     const streamerLogin = await getStreamerLogin(auth.channelId, auth.helixToken);
-                    console.log("Streamer login:", streamerLogin);
-                    
+                    console.log('Streamer login:', streamerLogin);
+
                 } catch (e) {
                     console.error('Authorization error:', e);
                 }
+            } else {
+                console.error('Authorization failed: missing channelId or helixToken');
             }
         });
 
-        // Функция для получения логина стримера
+        // Р¤СѓРЅРєС†РёСЏ РґР»СЏ РїРѕР»СѓС‡РµРЅРёСЏ Р»РѕРіРёРЅР° СЃС‚СЂРёРјРµСЂР°
         async function getStreamerLogin(channelId, token) {
+            if (!channelId || !token) {
+                console.error('Missing required parameters');
+                return null;
+            }
+
             try {
                 const response = await fetch(`https://api.twitch.tv/helix/users?id=${channelId}`, {
                     headers: {
-                        "Client-ID": "y5vpjhok2c1hdbdf50vmk2v3g0ts1o", // Замените на ваш Client ID
+                        "Client-ID": "pqedlc20zbhzl7sj1xnw17dmp6bz7b",
                         "Authorization": `Bearer ${token}`
                     }
                 });
-                
+
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
-                
+
                 const data = await response.json();
-                return data.data[0].login;
+                if (data.data && data.data.length > 0) {
+                    return data.data[0].login;
+                }
+                throw new Error('No data received');
             } catch (e) {
                 console.error('Error getting streamer login:', e);
                 return null;
             }
         }
 
-        // Обработчик сообщений PubSub
+        // РћР±СЂР°Р±РѕС‚С‡РёРє СЃРѕРѕР±С‰РµРЅРёР№ PubSub
         window.Twitch.ext.listen('broadcast', (target, contentType, message) => {
             console.log('Received PubSub message:', message);
             try {
+                if (!message) {
+                    throw new Error('Message is undefined');
+                }
+
                 const msg = typeof message === 'string' ? JSON.parse(message) : message;
-        
+
                 if (msg.type === 'config_update' && msg.data) {
                     console.log('Received new config:', msg.data);
                     updateUI(msg.data);
@@ -134,100 +155,126 @@
             }
         });
 
-        // Обновление UI на основе конфигурации
+        // РћР±РЅРѕРІР»РµРЅРёРµ UI РЅР° РѕСЃРЅРѕРІРµ РєРѕРЅС„РёРіСѓСЂР°С†РёРё
         function updateUI(config) {
-            // Основной заголовок
-            if (config.mainTitle) {
-                document.getElementById('main-title').textContent = config.mainTitle;
+            if (!config) {
+                console.error('Config is undefined');
+                return;
             }
 
-            // Основные кнопки
+            // РћСЃРЅРѕРІРЅРѕР№ Р·Р°РіРѕР»РѕРІРѕРє
+            const mainTitle = document.getElementById('main-title');
+            if (config.mainTitle && mainTitle) {
+                mainTitle.textContent = config.mainTitle;
+            }
+
+            // РћСЃРЅРѕРІРЅС‹Рµ РєРЅРѕРїРєРё
             const buttonContainer = document.getElementById('button-container');
-            buttonContainer.innerHTML = '';
-            
-            if (config.buttons && config.buttons.length > 0) {
-                config.buttons.forEach(button => {
-                    const btn = document.createElement('button');
-                    btn.className = 'button';
-                    btn.textContent = button.label;
-                    btn.onclick = () => handleButtonClick(button.id);
-                    buttonContainer.appendChild(btn);
-                });
+            if (buttonContainer) {
+                buttonContainer.innerHTML = '';
+
+                if (config.buttons && Array.isArray(config.buttons)) {
+                    config.buttons.forEach(button => {
+                        if (button.id && button.label) {
+                            const btn = document.createElement('button');
+                            btn.className = 'button';
+                            btn.textContent = button.label;
+                            btn.onclick = () => handleButtonClick(button.id);
+                            buttonContainer.appendChild(btn);
+                        }
+                    });
+                }
             }
 
-            // Вторичный заголовок
+            // Р’С‚РѕСЂРёС‡РЅС‹Р№ Р·Р°РіРѕР»РѕРІРѕРє
             const secondaryTitle = document.getElementById('secondary-title');
-            if (config.secondaryTitle) {
-                secondaryTitle.textContent = config.secondaryTitle;
-                secondaryTitle.style.display = 'block';
-            } else {
-                secondaryTitle.style.display = 'none';
+            if (secondaryTitle) {
+                if (config.secondaryTitle) {
+                    secondaryTitle.textContent = config.secondaryTitle;
+                    secondaryTitle.style.display = 'block';
+                } else {
+                    secondaryTitle.style.display = 'none';
+                }
             }
 
-            // Вторичные кнопки
+            // Р’С‚РѕСЂРёС‡РЅС‹Рµ РєРЅРѕРїРєРё
             const secondaryButtonContainer = document.getElementById('secondary-button-container');
-            secondaryButtonContainer.innerHTML = '';
-            
-            if (config.secondaryButtons && config.secondaryButtons.length > 0) {
-                config.secondaryButtons.forEach(button => {
-                    const btn = document.createElement('button');
-                    btn.className = 'button';
-                    btn.textContent = button.label;
-                    btn.onclick = () => handleButtonClick(button.id);
-                    secondaryButtonContainer.appendChild(btn);
-                });
+            if (secondaryButtonContainer) {
+                secondaryButtonContainer.innerHTML = '';
+
+                if (config.secondaryButtons && Array.isArray(config.secondaryButtons)) {
+                    config.secondaryButtons.forEach(button => {
+                        if (button.id && button.label) {
+                            const btn = document.createElement('button');
+                            btn.className = 'button';
+                            btn.textContent = button.label;
+                            btn.onclick = () => handleButtonClick(button.id);
+                            secondaryButtonContainer.appendChild(btn);
+                        }
+                    });
+                }
             }
         }
 
         let lastClickTime = 0;
 
-        // Обработка нажатия кнопки
+        // РћР±СЂР°Р±РѕС‚РєР° РЅР°Р¶Р°С‚РёСЏ РєРЅРѕРїРєРё
         function handleButtonClick(buttonId) {
             const now = Date.now();
-            if (now - lastClickTime < 500) { // 500ms debounce
+            if (now - lastClickTime < 500) {
                 console.log('Click throttled');
                 return;
             }
             lastClickTime = now;
 
-            // Получаем информацию о зрителе
-            window.Twitch.ext.onAuthorized(function(auth) {
+            window.Twitch.ext.onAuthorized(function (auth) {
+                if (!auth) {
+                    console.error('Authorization failed');
+                    return;
+                }
+
                 const username = auth.userName || 'anonymous';
 
-                // Отправка события через Twitch PubSub
                 try {
-                    window.Twitch.ext.send('broadcast', 'application/json', {
+                    if (!buttonId) {
+                        throw new Error('Button ID is undefined');
+                    }
+
+                    const message = {
                         action: 'button_click',
                         button_id: buttonId,
                         username: username,
                         timestamp: new Date().toISOString(),
                         _customEvent: true
-                    });
-                    
-                    // Опционально: отправка сообщения в чат
-                    if (buttonId === 'special_action') {
+                    };
+
+                    window.Twitch.ext.send('broadcast', 'application/json', message);
+
+                    if (buttonId === 'special_action' && window.Twitch.ext.actions) {
                         window.Twitch.ext.actions.sendChatMessage(`User ${username} pressed special button!`);
                     }
                 } catch (e) {
                     console.error('Send button click error:', e);
                 }
-            
+
                 console.log('Button clicked:', buttonId);
             });
         }
 
-        // Инициализация с дефолтными значениями
-        updateUI({
-            mainTitle: "Extension Overlay",
-            buttons: [
-                { id: "btn1", label: "Action 1" },
-                { id: "btn2", label: "Action 2" }
-            ],
-            secondaryTitle: "More Options",
-            secondaryButtons: [
-                { id: "btn3", label: "Special" },
-                { id: "btn4", label: "Help" }
-            ]
+        // РРЅРёС†РёР°Р»РёР·Р°С†РёСЏ СЃ РґРµС„РѕР»С‚РЅС‹РјРё Р·РЅР°С‡РµРЅРёСЏРјРё
+        document.addEventListener('DOMContentLoaded', () => {
+            updateUI({
+                mainTitle: "Extension Overlay",
+                buttons: [
+                    { id: "btn1", label: "Action 1" },
+                    { id: "btn2", label: "Action 2" }
+                ],
+                secondaryTitle: "More Options",
+                secondaryButtons: [
+                    { id: "btn3", label: "Special" },
+                    { id: "btn4", label: "Help" }
+                ]
+            });
         });
     </script>
 </body>
