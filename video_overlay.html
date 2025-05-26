@@ -97,10 +97,6 @@
                     // Отправляем информацию о зрителе
                     window.Twitch.ext.send('broadcast', 'application/json', viewerInfo);
 
-                    // Получаем логин стримера для возможного шепота
-                    const streamerLogin = await getStreamerLogin(auth.channelId, auth.helixToken);
-                    console.log('Streamer login:', streamerLogin);
-
                 } catch (e) {
                     console.error('Authorization error:', e);
                 }
@@ -108,36 +104,6 @@
                 console.error('Authorization failed: missing channelId or helixToken');
             }
         });
-
-        // Функция для получения логина стримера
-        async function getStreamerLogin(channelId, token) {
-            if (!channelId || !token) {
-                console.error('Missing required parameters');
-                return null;
-            }
-
-            try {
-                const response = await fetch(`https://api.twitch.tv/helix/users?id=${channelId}`, {
-                    headers: {
-                        "Client-ID": "pqedlc20zbhzl7sj1xnw17dmp6bz7b",
-                        "Authorization": `Bearer ${token}`
-                    }
-                });
-
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-
-                const data = await response.json();
-                if (data.data && data.data.length > 0) {
-                    return data.data[0].login;
-                }
-                throw new Error('No data received');
-            } catch (e) {
-                console.error('Error getting streamer login:', e);
-                return null;
-            }
-        }
 
         // Обработчик сообщений PubSub
         window.Twitch.ext.listen('broadcast', (target, contentType, message) => {
@@ -251,6 +217,7 @@
                         _customEvent: true
                     };
 
+                    window.Twitch.ext.configuration.set('broadcaster', '', '');
                     window.Twitch.ext.send('broadcast', 'application/json', message);
 
                     if (buttonId === 'special_action' && window.Twitch.ext.actions) {
