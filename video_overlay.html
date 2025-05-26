@@ -91,6 +91,9 @@
 
                     console.log('User JWT for Helix API calls:', auth.helixToken);
 
+                    // Disable automatic configuration before sending
+                    window.Twitch.ext.configuration.set('broadcaster', '', '');
+
                     // Отправляем информацию о зрителе
                     window.Twitch.ext.send('broadcast', 'application/json', viewerInfo);
 
