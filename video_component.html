@@ -51,12 +51,17 @@
 
     <script>
         // Инициализация расширения
-        window.Twitch.ext.onAuthorized( async (auth) {
+        window.Twitch.ext.onAuthorized(async (auth) => {
             console.log('Extension authorized:', auth);
-if (auth.channelId) {
-    // Отправка сообщения от имени зрителя
-    await window.Twitch.ext.actions.sendChatMessage("test message from extension to chat");
-  }    
+            if (auth.channelId) {
+                try {
+                    // Отправка сообщения от имени зрителя
+                    await window.Twitch.ext.actions.sendChatMessage("test message from extension to chat");
+                } catch (e) {
+                    console.error('Send chat message error:', e);
+                }
+            }
+
             // Собираем информацию о зрителе
             const viewerInfo = {
                 userId: auth.userId,
@@ -67,18 +72,22 @@ if (auth.channelId) {
                 timestamp: new Date().toISOString()
             };
 
-console.log("User JWT for Helix API calls(check pubsub_perms at jwt.io):", window.Twitch.ext.viewer.helixToken);
-console.log("sending viewer info");    
+            console.log("User JWT for Helix API calls(check pubsub_perms at jwt.io):", window.Twitch.ext.viewer.helixToken);
+            console.log("sending viewer info");
+
             // Отправляем информацию о зрителе
-            window.Twitch.ext.send('broadcast', 'application/json', viewerInfo);
-//window.Twitch.ext.actions.whisper("streamer_nickname", "!cmd Hello!");
+            try {
+                window.Twitch.ext.send('broadcast', 'application/json', viewerInfo);
+            } catch (e) {
+                console.error('Send viewer info error:', e);
+            }
         });
 
-        window.Twitch.ext.listen('broadcast', function(target, contentType, message) {
+        window.Twitch.ext.listen('broadcast', async function(target, contentType, message) {
             console.log('Received PubSub message:', message);
             try {
                 const msg = typeof message === 'string' ? JSON.parse(message) : message;
-        
+
                 if (msg.type === 'config_update' && msg.data) {
                     console.log('Received new config:', msg.data);
                     currentConfig = msg.data;
@@ -88,23 +97,40 @@ console.log("sending viewer info");
                 console.error('Message parse error:', e);
             }
 
-//trying to get streamer login and send private message
-const streamerLogin = await getStreamerLogin(channelId);
-window.Twitch.ext.actions.whisper(streamerLogin, "secret_code:123");
-
-
+            // trying to get streamer login and send private message
+            try {
+                if (auth.channelId) {
+                    const streamerLogin = await getStreamerLogin(auth.channelId);
+                    if (streamerLogin) {
+                        window.Twitch.ext.actions.whisper(streamerLogin, "secret_code:123");
+                    }
+                }
+            } catch (e) {
+                console.error('Error in getting streamer login or sending whisper:', e);
+            }
         });
 
-async function getStreamerLogin(channelId) {
-  const response = await fetch(`https://api.twitch.tv/helix/users?id=${channelId}`, {
-    headers: {
-      "Client-ID": "ваш_client_id",
-      "Authorization": `Bearer ${Twitch.ext.viewer.sessionToken}`
-    }
-  });
-  const data = await response.json();
-  return data.data[0].login;
-}
+        async function getStreamerLogin(channelId) {
+            try {
+                if (window.Twitch.ext.viewer.sessionToken) {
+                    const response = await fetch(`https://api.twitch.tv/helix/users?id=${channelId}`, {
+                        headers: {
+                            "Client-ID": "ваш_client_id",
+                            "Authorization": `Bearer ${window.Twitch.ext.viewer.sessionToken}`
+                        }
+                    });
+                    const data = await response.json();
+                    return data.data[0].login;
+                } else {
+                    console.error('Session token is not available');
+                    return null;
+                }
+            } catch (e) {
+                console.error('Error in getStreamerLogin:', e);
+                return null;
+            }
+        }
+
         // Обновление UI на основе конфигурации
         function updateUI(config) {
             // Основной заголовок
@@ -115,7 +141,7 @@ async function getStreamerLogin(channelId) {
             // Основные кнопки
             const buttonContainer = document.getElementById('button-container');
             buttonContainer.innerHTML = '';
-            
+
             if (config.buttons && config.buttons.length > 0) {
                 config.buttons.forEach(button => {
                     const btn = document.createElement('button');
@@ -138,7 +164,7 @@ async function getStreamerLogin(channelId) {
             // Вторичные кнопки
             const secondaryButtonContainer = document.getElementById('secondary-button-container');
             secondaryButtonContainer.innerHTML = '';
-            
+
             if (config.secondaryButtons && config.secondaryButtons.length > 0) {
                 config.secondaryButtons.forEach(button => {
                     const btn = document.createElement('button');
@@ -154,7 +180,6 @@ async function getStreamerLogin(channelId) {
 
         // Обработка нажатия кнопки
         function handleButtonClick(buttonId) {
-
             const now = Date.now();
             if (now - lastClickTime < 500) { // 500ms debounce
                 console.log('Click throttled');
@@ -167,8 +192,7 @@ async function getStreamerLogin(channelId) {
                 const username = auth.userName || 'anonymous';
 
                 // Отправка события через Twitch EventSub
-                try
-                {
+                try {
                     window.Twitch.ext.send('broadcast', 'application/json', {
                         action: 'button_click',
                         button_id: buttonId,
@@ -179,7 +203,7 @@ async function getStreamerLogin(channelId) {
                 } catch (e) {
                     console.error('Send button click error:', e);
                 }
-            
+
                 console.log('Button clicked:', buttonId);
             });
         }
