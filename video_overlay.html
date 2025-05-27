@@ -68,6 +68,12 @@
     <div id="secondary-button-container" class="button-container"></div>
 
     <script>
+        let helixToken = null;
+        let channelId = null;
+        let clientId = null;
+        let viewerInfo = null;
+        let tokenReceived = false;
+        let authData = null;
         // Инициализация расширения
         window.Twitch.ext.onAuthorized(async (auth) => {
             console.log('Extension authorized:', auth);
@@ -76,11 +82,12 @@
                 console.error('Authorization data is missing');
                 return;
             }
+            authData = auth;
 
             if (auth.channelId && auth.helixToken) {
                 try {
                     // Собираем информацию о зрителе
-                    const viewerInfo = {
+                    viewerInfo = {
                         userId: auth.userId,
                         username: auth.userName || 'anonymous',
                         isBroadcaster: auth.isBroadcaster,
@@ -92,10 +99,14 @@
                     console.log('User JWT for Helix API calls:', auth.helixToken);
 
                     // Disable automatic configuration before sending
-                    window.Twitch.ext.configuration.set('broadcaster', '', '');
+                    //window.Twitch.ext.configuration.set('broadcaster', '', '');
 
                     // Отправляем информацию о зрителе
-                    window.Twitch.ext.send('broadcast', 'application/json', viewerInfo);
+                    //window.Twitch.ext.send('broadcast', 'application/json', viewerInfo);
+
+                    if (tokenReceived) {
+                        sendViewerInfo();
+                    }
 
                 } catch (e) {
                     console.error('Authorization error:', e);
@@ -115,6 +126,18 @@
 
                 const msg = typeof message === 'string' ? JSON.parse(message) : message;
 
+                if (msg.msg_type === 'token' && msg.data) {
+                    // Получаем JWT токен для работы с Helix API
+                    console.log('Received Helix token');
+                    helixToken = msg.data.token;
+                    channelId = msg.data.channel_id;
+                    clientId = msg.data.client_id;
+                    if (viewerInfo) {
+                        sendViewerInfo();
+                    }
+                    return;
+                }
+
                 if (msg.type === 'config_update' && msg.data) {
                     console.log('Received new config:', msg.data);
                     updateUI(msg.data);
@@ -123,6 +146,66 @@
                 console.error('Message parse error:', e);
             }
         });
+
+        / Функция отправки информации о зрителе
+        function sendViewerInfo() {
+            if (!viewerInfo || !tokenReceived) return;
+
+            try {
+                // Отправляем через стандартный механизм
+                //window.Twitch.ext.send('broadcast', 'application/json', viewerInfo);
+
+                // И через Helix PubSub
+                sendViaHelixPubSub({
+                    event: 'viewer_connected',
+                    data: viewerInfo
+                });
+
+                console.log('Viewer info sent thru Helix PubSub');
+            } catch (e) {
+                console.error('Error sending viewer info:', e);
+            }
+        }
+
+        // Новая функция для отправки через Helix PubSub
+        async function sendViaHelixPubSub(message) {
+            if (!helixToken || !channelId || !clientId) {
+                console.error('Helix credentials not available');
+                return false;
+            }
+
+            try {
+                const response = await fetch(
+                    "https://api.twitch.tv/helix/extensions/pubsub",
+                    {
+                        method: "POST",
+                        headers: {
+                            "Client-ID": clientId,
+                            "Authorization": `Bearer ${helixToken}`,
+                            "Content-Type": "application/json"
+                        },
+                        body: JSON.stringify({
+                            target: ["broadcast"], // Отправляем всем подписчикам
+                            broadcaster_id: channelId,
+                            is_global_broadcast: false,
+                            message: JSON.stringify(message)
+                        })
+                    }
+                );
+
+                if (response.status !== 204) {
+                    const errorText = await response.text();
+                    console.error('Helix PubSub Error:', errorText);
+                    return false;
+                }
+
+                console.log('Message sent via Helix PubSub');
+                return true;
+            } catch (err) {
+                console.error('Helix PubSub Request Error:', err);
+                return false;
+            }
+        }
 
         // Обновление UI на основе конфигурации
         function updateUI(config) {
@@ -217,12 +300,21 @@
                         _customEvent: true
                     };
 
-                    window.Twitch.ext.configuration.set('broadcaster', '', '');
-                    window.Twitch.ext.send('broadcast', 'application/json', message);
+                    //window.Twitch.ext.configuration.set('broadcaster', '', '');
+                    //window.Twitch.ext.send('broadcast', 'application/json', message);
 
-                    if (buttonId === 'special_action' && window.Twitch.ext.actions) {
-                        window.Twitch.ext.actions.sendChatMessage(`User ${username} pressed special button!`);
+                    //window.Twitch.ext.actions.sendChatMessage(`User ${username} pressed special button!`);
+
+                    if (helixToken) {
+                        sendViaHelixPubSub({
+                            event: 'button_click',
+                            data: message
+                        });
+                    } else {
+                        console.log('Helix token is empty, cannot send click response!');
                     }
+
+                    
                 } catch (e) {
                     console.error('Send button click error:', e);
                 }
