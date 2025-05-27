@@ -84,6 +84,18 @@
             }
             authData = auth;
 
+            //TODO: listen to whispers
+            //window.Twitch.ext.listen('whisper-'+window.Twitch.ext.viewer.opaqueId, (t, c, m) => { });
+            try {
+                console.log("My opaque id is:", window.Twitch.ext.viewer.opaqueId);
+                window.Twitch.ext.listen('whisper-' + window.Twitch.ext.viewer.opaqueId, (t, c, m) =>
+                {
+                    console.log("Received a whisper:", message);
+                });
+            } catch (e) {
+                console.error('Error trying to set listen sub:', e);
+            }
+
             if (auth.channelId && auth.helixToken) {
                 try {
                     // Собираем информацию о зрителе
@@ -117,9 +129,6 @@
                 console.error('Authorization failed: missing channelId or helixToken');
             }
         });
-
-        //TODO: listen to whispers
-        //window.Twitch.ext.listen('whisper-'+window.Twitch.ext.viewer.opaqueId, (t, c, m) => { });
 
         // Обработчик сообщений PubSub
         window.Twitch.ext.listen('broadcast', (target, contentType, message) => {
