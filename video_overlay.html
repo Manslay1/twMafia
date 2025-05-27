@@ -89,6 +89,8 @@
                     // Собираем информацию о зрителе
                     viewerInfo = {
                         userId: auth.userId,
+                        opaqueId: auth.opaqueId,
+                        login: auth.login,
                         username: auth.userName || 'anonymous',
                         isBroadcaster: auth.isBroadcaster,
                         isMod: auth.isMod,
@@ -115,6 +117,9 @@
                 console.error('Authorization failed: missing channelId or helixToken');
             }
         });
+
+        //TODO: listen to whispers
+        //window.Twitch.ext.listen('whisper-'+window.Twitch.ext.viewer.opaqueId, (t, c, m) => { });
 
         // Обработчик сообщений PubSub
         window.Twitch.ext.listen('broadcast', (target, contentType, message) => {
