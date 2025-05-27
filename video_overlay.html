@@ -126,7 +126,7 @@
 
                 const msg = typeof message === 'string' ? JSON.parse(message) : message;
 
-                if (msg.msg_type === 'token' && msg.data) {
+                if (msg.type === 'token' && msg.data) {
                     // Получаем JWT токен для работы с Helix API
                     console.log('Received Helix token');
                     helixToken = msg.data.token;
