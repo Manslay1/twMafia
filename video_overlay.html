@@ -186,7 +186,8 @@
                             "Content-Type": "application/json"
                         },
                         body: JSON.stringify({
-                            target: ["broadcast"], // Отправляем всем подписчикам
+                            //target: ["broadcast"], //TODO: change to broadcaster "whisper-userid"
+                            target: ["whisper-"+channelId],
                             broadcaster_id: channelId,
                             is_global_broadcast: false,
                             message: JSON.stringify(message)
