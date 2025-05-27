@@ -90,7 +90,12 @@
                 console.log("My opaque id is:", window.Twitch.ext.viewer.opaqueId);
                 window.Twitch.ext.listen('whisper-' + window.Twitch.ext.viewer.opaqueId, (t, c, m) =>
                 {
-                    console.log("Received a whisper:", message);
+                    console.log("Received a whisper:");
+                    try {
+                        console.log("Message contents:", message.test);
+                    } catch (e) {
+                        console.error('Error trying to print message:', e);
+                    }
                 });
             } catch (e) {
                 console.error('Error trying to set listen sub:', e);
