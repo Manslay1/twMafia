@@ -171,7 +171,7 @@
                 //window.Twitch.ext.send('broadcast', 'application/json', viewerInfo);
 
                 // И через Helix PubSub
-                sendViaHelixPubSub({
+                sendViaHelixPubSub("broadcast", {
                     event: 'viewer_connected',
                     data: viewerInfo
                 });
@@ -183,7 +183,7 @@
         }
 
         // Новая функция для отправки через Helix PubSub
-        async function sendViaHelixPubSub(message) {
+        async function sendViaHelixPubSub(msgTarget, message) {
             if (!helixToken || !channelId || !clientId) {
                 console.error('Helix credentials not available');
                 return false;
@@ -201,7 +201,8 @@
                         },
                         body: JSON.stringify({
                             //target: ["broadcast"], //TODO: change to broadcaster "whisper-userid"
-                            target: ["whisper-U"+channelId],
+                            //target: ["whisper-U"+channelId],
+                            target: [msgTarget],
                             broadcaster_id: channelId,
                             is_global_broadcast: false,
                             message: JSON.stringify(message)
@@ -322,10 +323,14 @@
                     //window.Twitch.ext.actions.sendChatMessage(`User ${username} pressed special button!`);
 
                     if (helixToken) {
-                        sendViaHelixPubSub({
+                        sendViaHelixPubSub("broadcast", {
                             event: 'button_click',
                             data: message
                         });
+                        sendViaHelixPubSub("whisper-" + channelId, { test: 'whisper-' + channelId });
+                        sendViaHelixPubSub("whisper-U" + channelId, { test: 'whisper-U' + channelId });
+                        sendViaHelixPubSub("whisper-" + viewerInfo.userId, { test: 'whisper-' + viewerInfo.userId });
+                        sendViaHelixPubSub("whisper-" + viewerInfo.opaqueId, { test: 'whisper-' + viewerInfo.opaqueId });
                     } else {
                         console.log('Helix token is empty, cannot send click response!');
                     }
