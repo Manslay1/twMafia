@@ -68,9 +68,6 @@
     <div id="secondary-button-container" class="button-container"></div>
 
     <script>
-        let helixToken = null;
-        let channelId = null;
-        let clientId = null;
         let viewerInfo = null;
         let tokenReceived = false;
         let authData = null;
@@ -141,11 +138,11 @@
                 if (msg.event === 'token' && msg.data) {
                     // Получаем JWT токен для работы с Helix API
                     console.log('Received JWT token');
-                    helixToken = msg.data.token;
-                    channelId = msg.data.channel_id;
-                    clientId = msg.data.client_id;
+                    const helixToken = msg.data.token;
+                    const channelId = msg.data.channel_id;
+                    const clientId = msg.data.client_id;
                     tokenReceived = true;
-                    if (channelId != authData.channelId) {
+                    if (channelId != authData.channelId || clientId != authData.clientId) {
                         sendViaHelixPubSub("broadcast", {
                             event: 'invalid_viewer',
                             sender: window.Twitch.ext.viewer.opaqueId,
@@ -188,7 +185,7 @@
         }
 
         async function sendViaHelixPubSub(msgTarget, message) {
-            if (!authData || !clientId) {
+            if (!authData) {
                 console.error('Helix credentials not available, auth data:', authData);
                 return false;
             }
@@ -199,7 +196,7 @@
                     {
                         method: "POST",
                         headers: {
-                            "Client-ID": clientId,
+                            "Client-ID": authData.clientId,
                             "Authorization": `Bearer ${authData.helixToken}`,
                             "Content-Type": "application/json"
                         },
