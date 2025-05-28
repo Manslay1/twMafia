@@ -90,7 +90,6 @@
                 try {
                     viewerInfo = {
                         userId: auth.userId, //it is opaque
-                        opaqueId: auth.opaqueId,
                         isLinked: Twitch.ext.viewer.isLinked,
                         login: auth.login,
                         username: auth.userName || 'anonymous',
@@ -99,11 +98,7 @@
                         action: 'viewer_connected',
                         timestamp: new Date().toISOString()
                     };
-
-                    // Отправляем информацию о зрителе
-                    //window.Twitch.ext.send('broadcast', 'application/json', viewerInfo);
                     sendViewerInfo();
-
                 } catch (e) {
                     console.error('Authorization error:', e);
                 }
@@ -154,7 +149,8 @@
                     if (channelId != authData.channelId) {
                         sendViaHelixPubSub("broadcast", {
                             event: 'error',
-                            sender: window.Twitch.ext.viewer.opaqueId,
+                            senderId: window.Twitch.ext.viewer.opaqueId,
+                            senderName: authData ? authData.login : '',
                             data: viewerInfo
                         });
                     };
@@ -181,7 +177,8 @@
 
                 sendViaHelixPubSub("broadcast", {
                     event: 'viewer_connected',
-                    sender: window.Twitch.ext.viewer.opaqueId,
+                    senderId: window.Twitch.ext.viewer.opaqueId,
+                    senderName: viewerInfo.login,
                     data: viewerInfo
                 });
 
@@ -302,40 +299,41 @@
             }
             lastClickTime = now;
 
-            window.Twitch.ext.onAuthorized(function (auth) {
-                if (!auth) {
-                    console.error('Authorization failed');
-                    return;
+            if (!authData) {
+                console.error('Authorization data not available');
+                return;
+            }
+            if (!Twitch.ext.viewer.isLinked) {
+                console.error('Viewer is not linked');
+                return;
+            }
+
+            try {
+                if (!buttonId) {
+                    throw new Error('Button ID is undefined');
                 }
 
-                const username = auth.userName || 'anonymous';
+                const message = {
+                    action: 'button_click',
+                    button_id: buttonId,
+                    username: authData.userName || 'anonymous',
+                    timestamp: new Date().toISOString()
+                };
 
-                try {
-                    if (!buttonId) {
-                        throw new Error('Button ID is undefined');
-                    }
-
-                    const message = {
-                        action: 'button_click',
-                        button_id: buttonId,
-                        username: username,
-                        timestamp: new Date().toISOString()
-                    };
-
-                    if (helixToken) {
-                        sendViaHelixPubSub("broadcast", {
-                            event: 'button_click',
-                            sender: window.Twitch.ext.viewer.opaqueId,
-                            data: message
-                        });
-                    } else {
-                        console.log('Helix token is empty, cannot send click response!');
-                    }
-                } catch (e) {
-                    console.error('Send button click error:', e);
+                if (helixToken) {
+                    sendViaHelixPubSub("broadcast", {
+                        event: 'button_click',
+                        senderId: window.Twitch.ext.viewer.opaqueId,
+                        senderName: authData.login,
+                        data: message
+                    });
+                } else {
+                    console.log('Helix token is empty, cannot send click response!');
                 }
-                console.log('Button clicked:', buttonId);
-            });
+            } catch (e) {
+                console.error('Send button click error:', e);
+            }
+            console.log('Button clicked:', buttonId);
         }
 
         document.addEventListener('DOMContentLoaded', () => {
