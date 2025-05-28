@@ -91,6 +91,7 @@
                     viewerInfo = {
                         userId: auth.userId, //it is opaque
                         opaqueId: auth.opaqueId,
+                        isLinked: Twitch.ext.viewer.isLinked,
                         login: auth.login,
                         username: auth.userName || 'anonymous',
                         isBroadcaster: auth.isBroadcaster,
@@ -123,8 +124,13 @@
                 userName = body.data.at(0)?.display_name;
                 viewerInfo.login = userName;
                 console.log("Username:", userName);
+                updateUI({ mainTitle: "Mafia chat game (waiting for streamer)" });
             } else {
                 console.error("Twitch username is not linked!");
+                updateUI({
+                    mainTitle: "Please, share your nickname to the game",
+                    buttons: [{ id: 'share', label: 'Share' }]
+                });
             }
         });
 
@@ -247,7 +253,11 @@
                             const btn = document.createElement('button');
                             btn.className = 'button';
                             btn.textContent = button.label;
-                            btn.onclick = () => handleButtonClick(button.id);
+                            if (button.id === 'share') {
+                                btn.onclick = () => window.Twitch.ext.actions.requestIdShare();
+                            } else {
+                                btn.onclick = () => handleButtonClick(button.id);
+                            }
                             buttonContainer.appendChild(btn);
                         }
                     });
@@ -329,9 +339,16 @@
         }
 
         document.addEventListener('DOMContentLoaded', () => {
-            updateUI({
-                mainTitle: "Mafia chat game (waiting for streamer)"
-            });
+            if (!Twitch.ext.viewer.isLinked) {
+                updateUI({
+                    mainTitle: "Please, share your nickname to the game",
+                    buttons: [{ id: 'share', label: 'Share' }]
+                });
+            } else {
+                updateUI({
+                    mainTitle: "Mafia chat game (waiting for streamer)"
+                });
+            };
         });
     </script>
 </body>
