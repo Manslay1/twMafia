@@ -95,7 +95,6 @@
                         username: auth.userName || 'anonymous',
                         isBroadcaster: auth.isBroadcaster,
                         isMod: auth.isMod,
-                        action: 'viewer_connected',
                         timestamp: new Date().toISOString()
                     };
                     sendViewerInfo();
@@ -148,7 +147,7 @@
                     tokenReceived = true;
                     if (channelId != authData.channelId) {
                         sendViaHelixPubSub("broadcast", {
-                            event: 'error',
+                            event: 'invalid_viewer',
                             sender: window.Twitch.ext.viewer.opaqueId,
                             senderName: authData ? authData.login : '',
                             data: viewerInfo
