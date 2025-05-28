@@ -74,7 +74,7 @@
         let viewerInfo = null;
         let tokenReceived = false;
         let authData = null;
-        // Инициализация расширения
+
         window.Twitch.ext.onAuthorized(async (auth) => {
             console.log('Extension authorized:', auth);
 
@@ -84,29 +84,11 @@
             }
             authData = auth;
 
-            //TODO: listen to whispers
-            //window.Twitch.ext.listen('whisper-'+window.Twitch.ext.viewer.opaqueId, (t, c, m) => { });
-            try {
-                console.log("My opaque id is:", window.Twitch.ext.viewer.opaqueId);
-                window.Twitch.ext.listen('whisper-' + window.Twitch.ext.viewer.opaqueId, (t, c, m) =>
-                {
-                    console.log("Received a whisper:");
-                    try {
-                        console.log("Message contents:", message.test);
-                    } catch (e) {
-                        console.error('Error trying to print message:', e);
-                    }
-                });
-            } catch (e) {
-                console.error('Error trying to set listen sub:', e);
-            }
-
             if (auth.channelId && auth.helixToken) {
                 try {
-                    // Собираем информацию о зрителе
                     viewerInfo = {
-                        userId: auth.userId,
-                        opaqueId: auth.opaqueId,
+                        userId: auth.userId, //it is opaque
+                        //opaqueId: auth.opaqueId,
                         login: auth.login,
                         username: auth.userName || 'anonymous',
                         isBroadcaster: auth.isBroadcaster,
@@ -115,14 +97,8 @@
                         timestamp: new Date().toISOString()
                     };
 
-                    console.log('User JWT for Helix API calls:', auth.helixToken);
-
-                    // Disable automatic configuration before sending
-                    //window.Twitch.ext.configuration.set('broadcaster', '', '');
-
                     // Отправляем информацию о зрителе
                     //window.Twitch.ext.send('broadcast', 'application/json', viewerInfo);
-
                     if (tokenReceived) {
                         sendViewerInfo();
                     }
@@ -135,7 +111,7 @@
             }
         });
 
-        // Обработчик сообщений PubSub
+        // PubSub event listener
         window.Twitch.ext.listen('broadcast', (target, contentType, message) => {
             console.log('Received PubSub message:', message);
             try {
@@ -147,12 +123,19 @@
 
                 if (msg.type === 'token' && msg.data) {
                     // Получаем JWT токен для работы с Helix API
-                    console.log('Received Helix token');
+                    console.log('Received JWT token');
                     helixToken = msg.data.token;
                     channelId = msg.data.channel_id;
                     clientId = msg.data.client_id;
                     tokenReceived = true;
                     if (viewerInfo) {
+                        if (channelId != authData.channelId) {
+                            sendViaHelixPubSub("broadcast", {
+                                event: 'error',
+                                sender: window.Twitch.ext.viewer.opaqueId,
+                                data: viewerInfo
+                            });
+                        };
                         sendViewerInfo();
                     }
                     return;
@@ -175,9 +158,9 @@
                 // Отправляем через стандартный механизм
                 //window.Twitch.ext.send('broadcast', 'application/json', viewerInfo);
 
-                // И через Helix PubSub
                 sendViaHelixPubSub("broadcast", {
                     event: 'viewer_connected',
+                    sender: window.Twitch.ext.viewer.opaqueId,
                     data: viewerInfo
                 });
 
@@ -187,7 +170,6 @@
             }
         }
 
-        // Новая функция для отправки через Helix PubSub
         async function sendViaHelixPubSub(msgTarget, message) {
             if (!helixToken || !channelId || !clientId) {
                 console.error('Helix credentials not available');
@@ -205,7 +187,7 @@
                             "Content-Type": "application/json"
                         },
                         body: JSON.stringify({
-                            //target: ["broadcast"], //TODO: change to broadcaster "whisper-userid"
+                            //target: ["broadcast"],
                             //target: ["whisper-U"+channelId],
                             target: [msgTarget],
                             broadcaster_id: channelId,
@@ -229,20 +211,17 @@
             }
         }
 
-        // Обновление UI на основе конфигурации
         function updateUI(config) {
             if (!config) {
                 console.error('Config is undefined');
                 return;
             }
 
-            // Основной заголовок
             const mainTitle = document.getElementById('main-title');
             if (config.mainTitle && mainTitle) {
                 mainTitle.textContent = config.mainTitle;
             }
 
-            // Основные кнопки
             const buttonContainer = document.getElementById('button-container');
             if (buttonContainer) {
                 buttonContainer.innerHTML = '';
@@ -260,7 +239,6 @@
                 }
             }
 
-            // Вторичный заголовок
             const secondaryTitle = document.getElementById('secondary-title');
             if (secondaryTitle) {
                 if (config.secondaryTitle) {
@@ -271,7 +249,6 @@
                 }
             }
 
-            // Вторичные кнопки
             const secondaryButtonContainer = document.getElementById('secondary-button-container');
             if (secondaryButtonContainer) {
                 secondaryButtonContainer.innerHTML = '';
@@ -292,7 +269,6 @@
 
         let lastClickTime = 0;
 
-        // Обработка нажатия кнопки
         function handleButtonClick(buttonId) {
             const now = Date.now();
             if (now - lastClickTime < 500) {
@@ -318,50 +294,28 @@
                         action: 'button_click',
                         button_id: buttonId,
                         username: username,
-                        timestamp: new Date().toISOString(),
-                        _customEvent: true
+                        timestamp: new Date().toISOString()
                     };
-
-                    //window.Twitch.ext.configuration.set('broadcaster', '', '');
-                    //window.Twitch.ext.send('broadcast', 'application/json', message);
-
-                    //window.Twitch.ext.actions.sendChatMessage(`User ${username} pressed special button!`);
 
                     if (helixToken) {
                         sendViaHelixPubSub("broadcast", {
                             event: 'button_click',
+                            sender: window.Twitch.ext.viewer.opaqueId,
                             data: message
                         });
-                        sendViaHelixPubSub("whisper-" + channelId, { test: 'whisper-' + channelId });
-                        sendViaHelixPubSub("whisper-U" + channelId, { test: 'whisper-U' + channelId });
-                        sendViaHelixPubSub("whisper-" + viewerInfo.userId, { test: 'whisper-' + viewerInfo.userId });
-                        sendViaHelixPubSub("whisper-" + viewerInfo.opaqueId, { test: 'whisper-' + viewerInfo.opaqueId });
                     } else {
                         console.log('Helix token is empty, cannot send click response!');
                     }
-
-                    
                 } catch (e) {
                     console.error('Send button click error:', e);
                 }
-
                 console.log('Button clicked:', buttonId);
             });
         }
 
-        // Инициализация с дефолтными значениями
         document.addEventListener('DOMContentLoaded', () => {
             updateUI({
-                mainTitle: "Extension Overlay",
-                buttons: [
-                    { id: "btn1", label: "Action 1" },
-                    { id: "btn2", label: "Action 2" }
-                ],
-                secondaryTitle: "More Options",
-                secondaryButtons: [
-                    { id: "btn3", label: "Special" },
-                    { id: "btn4", label: "Help" }
-                ]
+                mainTitle: "Mafia chat game (waiting for streamer)"
             });
         });
     </script>
