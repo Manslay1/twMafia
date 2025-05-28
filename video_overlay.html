@@ -185,7 +185,7 @@
         }
 
         async function sendViaHelixPubSub(msgTarget, message) {
-            if (!authData) {
+            if (!authData?.clientId || !authData?.helixToken || !authData?.channelId) {
                 console.error('Helix credentials not available, auth data:', authData);
                 return false;
             }
