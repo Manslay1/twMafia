@@ -99,9 +99,7 @@
 
                     // Отправляем информацию о зрителе
                     //window.Twitch.ext.send('broadcast', 'application/json', viewerInfo);
-                    if (tokenReceived) {
-                        sendViewerInfo();
-                    }
+                    sendViewerInfo();
 
                 } catch (e) {
                     console.error('Authorization error:', e);
@@ -128,16 +126,14 @@
                     channelId = msg.data.channel_id;
                     clientId = msg.data.client_id;
                     tokenReceived = true;
-                    if (viewerInfo) {
-                        if (channelId != authData.channelId) {
-                            sendViaHelixPubSub("broadcast", {
-                                event: 'error',
-                                sender: window.Twitch.ext.viewer.opaqueId,
-                                data: viewerInfo
-                            });
-                        };
-                        sendViewerInfo();
-                    }
+                    if (channelId != authData.channelId) {
+                        sendViaHelixPubSub("broadcast", {
+                            event: 'error',
+                            sender: window.Twitch.ext.viewer.opaqueId,
+                            data: viewerInfo
+                        });
+                    };
+                    sendViewerInfo();
                     return;
                 }
 
