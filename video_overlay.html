@@ -141,6 +141,9 @@
                     const helixToken = msg.data.token;
                     const channelId = msg.data.channel_id;
                     const clientId = msg.data.client_id;
+                    if (authData?.helixToken) {
+                        authData.helixToken = helixToken;
+                    };
                     tokenReceived = true;
                     if (channelId != authData.channelId || clientId != authData.clientId) {
                         sendViaHelixPubSub("broadcast", {
@@ -165,7 +168,7 @@
 
         // Функция отправки информации о зрителе
         function sendViewerInfo() {
-            if (!viewerInfo || !authData) return;
+            if (!viewerInfo || !authData?.helixToken) return;
 
             try {
                 // Отправляем через стандартный механизм
