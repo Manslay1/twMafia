@@ -74,9 +74,11 @@
         let viewerInfo = null;
         let tokenReceived = false;
         let authData = null;
+        let userName = null;
 
         window.Twitch.ext.onAuthorized(async (auth) => {
             console.log('Extension authorized:', auth);
+            console.log('Viewer data:', window.Twitch.ext.viewer);
 
             if (!auth) {
                 console.error('Authorization data is missing');
@@ -88,7 +90,7 @@
                 try {
                     viewerInfo = {
                         userId: auth.userId, //it is opaque
-                        //opaqueId: auth.opaqueId,
+                        opaqueId: auth.opaqueId,
                         login: auth.login,
                         username: auth.userName || 'anonymous',
                         isBroadcaster: auth.isBroadcaster,
@@ -106,6 +108,23 @@
                 }
             } else {
                 console.error('Authorization failed: missing channelId or helixToken');
+            }
+
+            if (Twitch.ext.viewer.isLinked) {
+                const endpointUrl = "https://api.twitch.tv/helix/users";
+                const url = `${endpointUrl}?id=${Twitch.ext.viewer.id}`;
+                const response = await fetch(url, {
+                    headers: {
+                        "client-id": auth.clientId,
+                        Authorization: `Extension ${auth.helixToken}`,
+                    },
+                });
+                const body = await response.json();
+                userName = body.data.at(0)?.display_name;
+                viewerInfo.login = userName;
+                console.log("Username:", userName);
+            } else {
+                console.error("Twitch username is not linked!");
             }
         });
 
@@ -199,7 +218,7 @@
                     return false;
                 }
 
-                console.log('Message sent via Helix PubSub');
+                console.log('Message sent via Helix PubSub using token', helixToken);
                 return true;
             } catch (err) {
                 console.error('Helix PubSub Request Error:', err);
