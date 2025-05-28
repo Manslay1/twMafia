@@ -188,8 +188,8 @@
         }
 
         async function sendViaHelixPubSub(msgTarget, message) {
-            if (!authData || !channelId || !clientId) {
-                console.error('Helix credentials not available');
+            if (!authData || !clientId) {
+                console.error('Helix credentials not available, auth data:', authData);
                 return false;
             }
 
@@ -207,7 +207,7 @@
                             //target: ["broadcast"],
                             //target: ["whisper-U"+channelId],
                             target: [msgTarget],
-                            broadcaster_id: channelId,
+                            broadcaster_id: authData.channelId,
                             is_global_broadcast: false,
                             message: JSON.stringify(message)
                         })
