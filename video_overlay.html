@@ -139,7 +139,7 @@
 
                 const msg = typeof message === 'string' ? JSON.parse(message) : message;
 
-                if (msg.type === 'token' && msg.data) {
+                if (msg.event === 'token' && msg.data) {
                     // Получаем JWT токен для работы с Helix API
                     console.log('Received JWT token');
                     helixToken = msg.data.token;
@@ -149,7 +149,7 @@
                     if (channelId != authData.channelId) {
                         sendViaHelixPubSub("broadcast", {
                             event: 'error',
-                            senderId: window.Twitch.ext.viewer.opaqueId,
+                            sender: window.Twitch.ext.viewer.opaqueId,
                             senderName: authData ? authData.login : '',
                             data: viewerInfo
                         });
@@ -158,7 +158,7 @@
                     return;
                 }
 
-                if (msg.type === 'config_update' && msg.data) {
+                if (msg.event === 'config_update' && msg.data) {
                     console.log('Received new config:', msg.data);
                     updateUI(msg.data);
                 }
@@ -177,7 +177,7 @@
 
                 sendViaHelixPubSub("broadcast", {
                     event: 'viewer_connected',
-                    senderId: window.Twitch.ext.viewer.opaqueId,
+                    sender: window.Twitch.ext.viewer.opaqueId,
                     senderName: authData ? authData.login : viewerInfo.login,
                     data: viewerInfo
                 });
@@ -323,7 +323,7 @@
                 if (helixToken) {
                     sendViaHelixPubSub("broadcast", {
                         event: 'button_click',
-                        senderId: window.Twitch.ext.viewer.opaqueId,
+                        sender: window.Twitch.ext.viewer.opaqueId,
                         senderName: authData.login,
                         data: message
                     });
