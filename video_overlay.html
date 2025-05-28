@@ -178,7 +178,7 @@
                 sendViaHelixPubSub("broadcast", {
                     event: 'viewer_connected',
                     senderId: window.Twitch.ext.viewer.opaqueId,
-                    senderName: viewerInfo.login,
+                    senderName: authData ? authData.login : viewerInfo.login,
                     data: viewerInfo
                 });
 
