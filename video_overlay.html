@@ -168,7 +168,7 @@
 
         // Функция отправки информации о зрителе
         function sendViewerInfo() {
-            if (!viewerInfo || !tokenReceived) return;
+            if (!viewerInfo || !authData) return;
 
             try {
                 // Отправляем через стандартный механизм
@@ -188,7 +188,7 @@
         }
 
         async function sendViaHelixPubSub(msgTarget, message) {
-            if (!helixToken || !channelId || !clientId) {
+            if (!authData || !channelId || !clientId) {
                 console.error('Helix credentials not available');
                 return false;
             }
@@ -200,7 +200,7 @@
                         method: "POST",
                         headers: {
                             "Client-ID": clientId,
-                            "Authorization": `Bearer ${helixToken}`,
+                            "Authorization": `Bearer ${authData.helixToken}`,
                             "Content-Type": "application/json"
                         },
                         body: JSON.stringify({
@@ -220,7 +220,7 @@
                     return false;
                 }
 
-                console.log('Message sent via Helix PubSub using token', helixToken);
+                console.log('Message sent via Helix PubSub using token', authData.helixToken);
                 return true;
             } catch (err) {
                 console.error('Helix PubSub Request Error:', err);
@@ -319,7 +319,7 @@
                     timestamp: new Date().toISOString()
                 };
 
-                if (helixToken) {
+                if (authData.helixToken) {
                     sendViaHelixPubSub("broadcast", {
                         event: 'button_click',
                         sender: window.Twitch.ext.viewer.opaqueId,
