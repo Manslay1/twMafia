@@ -132,8 +132,28 @@
                 if (!message) {
                     throw new Error('Message is undefined');
                 }
+                if (!authData) {
+                    console.error('Received a message, but authorization data is not available yet.', message);
+                    return;
+                }
 
                 const msg = typeof message === 'string' ? JSON.parse(message) : message;
+
+                if (!msg.target) {
+                    if (msg.sender && msg.sender != authData.channelId) {
+                        console.error(`Received broadcast from other streamer: ${msg.sender}, we accept only ${authData.channelId}`);
+                        return;
+                    }
+                }
+
+                if (msg.target) {
+                    if (authData.userId === msg.target) {
+                        console.log('Processing targeted message for this user');
+                    } else {
+                        console.error(`Message not for this user (target: ${msg.target}, current: ${authData.userId})`);
+                        return;
+                    }
+                }
 
                 if (msg.event === 'token' && msg.data) {
                     // Получаем JWT токен для работы с Helix API
