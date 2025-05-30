@@ -89,30 +89,20 @@
                 console.error('Authorization failed: missing channelId or helixToken');
                 return;
             }
-            if (!authData) {
-                authData = {
-                    channelId: auth.channelId,
-                    clientId: auth.clientId,
-                    userId: auth.userId,
-                    login: auth.login,
-                    userName: auth.userName,
-                    helixToken: auth.helixToken
-                };
-            } else {
-                // Saving helixToken and userName
-                authData.channelId = auth.channelId;
-                authData.clientId = auth.clientId;
-                authData.userId = auth.userId;
-                authData.login = auth.login;
-            }
+            authData = authData || {
+                channelId: auth.channelId,
+                clientId: auth.clientId,
+                userId: auth.userId,
+                login: auth.login,
+                userName: auth.userName,
+                helixToken: auth.helixToken
+            };
 
             viewerInfo = {
                 userId: auth.userId, //it is opaque
                 isLinked: Twitch.ext.viewer.isLinked,
                 login: authData.login,
                 userName: authData.userName || 'anonymous',
-                isBroadcaster: auth.isBroadcaster,
-                isMod: auth.isMod,
                 timestamp: new Date().toISOString()
             };
 
@@ -134,19 +124,10 @@
                         return console.error(`Received broadcast from other streamer: ${msg.sender}, we accept only ${authData.channelId}`);
                     }
                 }
-
-                if (msg.target) {
-                    if (authData.userId === msg.target) {
-                        console.log('Processing targeted message for this user');
-                    } else {
-                        return console.error(`Message not for this user (target: ${msg.target}, current: ${authData.userId})`);
-                    }
-                }
+                if (msg.target && authData.userId !== msg.target) return console.error(`Message not for this user (target: ${msg.target}, current: ${authData.userId})`);
 
                 if (msg.event === 'token' && msg.data) {
-                    if (!authData) authData = {};
                     authData.helixToken = msg.data.token;
-                    console.log(`Updated authData token to ${msg.data.token}`);
                     if (msg.data.channelId !== authData.channelId || msg.data.clientId !== authData.clientId) {
                         console.log(`Sending i_v response, because ${msg.data.channelId} != authData channelId = ${authData.channelId} and clientId = ${authData.clientId}`)
                         sendViaHelixPubSub("broadcast", {
@@ -172,22 +153,19 @@
 
         async function sendViewerInfo(viewerInfo) {
             if (!viewerInfo || !authData?.helixToken || !authData?.channelId || !authData?.clientId) return console.error('Not enough data to send viewer info', { authData, viewerInfo });
+            if (Twitch.ext.viewer.isLinked) return console.error("Twitch username is not linked, cannot send user info yet!");
 
-            if (Twitch.ext.viewer.isLinked) {
-                try {
-                    const response = await fetch(`https://api.twitch.tv/helix/users?id=${Twitch.ext.viewer.id}`, {
-                        headers: { "client-id": authData.clientId, Authorization: `Extension ${authData.helixToken}`, },
-                    });
-                    userName = (await response.json()).data[0]?.display_name;
-                    authData.userName = userName;
-                    viewerInfo.login = userName;
-                    console.log("Username:", userName);
-                } catch (e) {
-                    console.error("Failed to fetch user data:", e);
-                }
-            } else {
-                return console.error("Twitch username is not linked, cannot send user info yet!");
-            }
+            try {
+                const response = await fetch(`https://api.twitch.tv/helix/users?id=${Twitch.ext.viewer.id}`, {
+                    headers: { "client-id": authData.clientId, Authorization: `Extension ${authData.helixToken}`, },
+                });
+                userName = (await response.json()).data[0]?.display_name;
+                authData.userName = userName;
+                viewerInfo.login = userName;
+                console.log("Username:", userName);
+            } catch (e) {
+                console.error("Failed to fetch user data:", e);
+            };
 
             console.log(`Sending viewer info with token ${authData.helixToken}`)
             sendViaHelixPubSub("broadcast", {
