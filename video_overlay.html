@@ -84,6 +84,7 @@
 
         window.Twitch.ext.onAuthorized(async (auth) => {
             console.log('Extension authorized:', auth);
+            console.log('authData:', authData);
             if (!auth?.channelId || !auth?.helixToken) {
                 console.error('Authorization failed: missing channelId or helixToken');
                 return;
