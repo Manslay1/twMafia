@@ -115,11 +115,7 @@
                 timestamp: new Date().toISOString()
             };
 
-            if (Twitch.ext.viewer.isLinked) {
-                updateUI({ mainTitle: "Mafia chat game (waiting for streamer)" });
-            } else {
-                updateUI({ mainTitle: "Please, share your nickname to the game", buttons: [{ id: 'share', label: 'Share' }] });
-            }
+            updateUI({ mainTitle: "Mafia chat game (waiting for streamer)" });
             sendViewerInfo(viewerInfo);
         });
 
@@ -179,7 +175,7 @@
             if (Twitch.ext.viewer.isLinked) {
                 try {
                     const response = await fetch(`https://api.twitch.tv/helix/users?id=${Twitch.ext.viewer.id}`, {
-                        headers: { "client-id": auth.clientId, Authorization: `Extension ${auth.helixToken}`, },
+                        headers: { "client-id": authData.clientId, Authorization: `Extension ${authData.helixToken}`, },
                     });
                     userName = (await response.json()).data[0]?.display_name;
                     authData.userName = userName;
@@ -236,6 +232,7 @@
         }
 
         function updateUI(config) {
+            if (!Twitch.ext.viewer.isLinked) config = { mainTitle: "Please, share your nickname to the game", buttons: [{ id: 'share', label: 'Share' }] };
             if (!config) return console.error('Config is undefined');
 
             const updateElement = (id, content, isVisible) => {
