@@ -256,7 +256,6 @@
             if (!Twitch.ext.viewer.isLinked) return console.error('Viewer is not linked');
 
             const message = {
-                action: 'button_click',
                 buttonId: buttonId,
                 userName: authData.userName || 'anonymous',
                 timestamp: new Date().toISOString()
