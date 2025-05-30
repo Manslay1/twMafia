@@ -88,13 +88,28 @@
                 console.error('Authorization failed: missing channelId or helixToken');
                 return;
             }
-            authData = auth;
+            if (!authData) {
+                authData = {
+                    channelId: auth.channelId,
+                    clientId: auth.clientId,
+                    userId: auth.userId,
+                    login: auth.login,
+                    userName: auth.userName,
+                    helixToken: auth.helixToken
+                };
+            } else {
+                // Saving helixToken and userName
+                authData.channelId = auth.channelId;
+                authData.clientId = auth.clientId;
+                authData.userId = auth.userId;
+                authData.login = auth.login;
+            }
 
             viewerInfo = {
                 userId: auth.userId, //it is opaque
                 isLinked: Twitch.ext.viewer.isLinked,
-                login: auth.login,
-                username: auth.userName || 'anonymous',
+                login: authData.login,
+                userName: authData.userName || 'anonymous',
                 isBroadcaster: auth.isBroadcaster,
                 isMod: auth.isMod,
                 timestamp: new Date().toISOString()
@@ -106,6 +121,7 @@
                         headers: { "client-id": auth.clientId, Authorization: `Extension ${auth.helixToken}`, },
                     });
                     userName = (await response.json()).data[0]?.display_name;
+                    authData.userName = userName;
                     viewerInfo.login = userName;
                     console.log("Username:", userName);
                     updateUI({ mainTitle: "Mafia chat game (waiting for streamer)" });
@@ -144,6 +160,7 @@
                 }
 
                 if (msg.event === 'token' && msg.data) {
+                    if (!authData) authData = {};
                     authData.helixToken = msg.data.token;
                     if (msg.data.channelId !== authData.channelId || msg.data.clientId !== authData.clientId) {
                         console.log(`Sending i_v response, because authData channelId = ${authData.channelId} and clientId = ${authData.clientId}`)
@@ -171,7 +188,7 @@
             sendViaHelixPubSub("broadcast", {
                 event: 'viewer_connected',
                 sender: window.Twitch.ext.viewer.opaqueId,
-                senderName: authData ? authData.login : viewerInfo.login,
+                senderName: authData ? authData.userName : viewerInfo.login,
                 data: viewerInfo
             });
         }
@@ -257,14 +274,14 @@
             const message = {
                 action: 'button_click',
                 buttonId: buttonId,
-                username: authData.userName || 'anonymous',
+                userName: authData.userName || 'anonymous',
                 timestamp: new Date().toISOString()
             };
 
             sendViaHelixPubSub("broadcast", {
                 event: 'button_click',
                 sender: window.Twitch.ext.viewer.opaqueId,
-                senderName: authData.login,
+                senderName: authData.userName,
                 data: message
             });
             console.log('Button clicked:', buttonId);
