@@ -197,7 +197,7 @@
                 if (response.status !== 204) {
                     console.error('Helix PubSub Error:', await response.text());
                 } else {
-                    console.log('Message sent via Helix PubSub');
+                    console.log('Message sent via Helix PubSub:', message);
                 }
             } catch (err) {
                 console.error('Helix PubSub Request Error:', err);
