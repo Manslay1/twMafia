@@ -171,7 +171,9 @@
                             senderName: authData ? authData.login : '',
                             data: viewerInfo
                         });
+                        return;
                     };
+                    sendViewerInfo(viewerInfo);
                     return;
                 }
 
