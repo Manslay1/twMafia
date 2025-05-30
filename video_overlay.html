@@ -101,13 +101,18 @@
             };
 
             if (Twitch.ext.viewer.isLinked) {
-                const response = await fetch(`https://api.twitch.tv/helix/users?id=${Twitch.ext.viewer.id}`, {
-                    headers: { "client-id": auth.clientId, Authorization: `Extension ${auth.helixToken}`, },
-                });
-                userName = (await response.json()).data[0]?.display_name;
-                viewerInfo.login = userName;
-                console.log("Username:", userName);
-                updateUI({ mainTitle: "Mafia chat game (waiting for streamer)" });
+                try {
+                    const response = await fetch(`https://api.twitch.tv/helix/users?id=${Twitch.ext.viewer.id}`, {
+                        headers: { "client-id": auth.clientId, Authorization: `Extension ${auth.helixToken}`, },
+                    });
+                    userName = (await response.json()).data[0]?.display_name;
+                    viewerInfo.login = userName;
+                    console.log("Username:", userName);
+                    updateUI({ mainTitle: "Mafia chat game (waiting for streamer)" });
+                } catch (e) {
+                    console.error("Failed to fetch user data:", e);
+                    updateUI({ mainTitle: "Error loading user data" });
+                }
             } else {
                 console.error("Twitch username is not linked!");
                 updateUI({ mainTitle: "Please, share your nickname to the game", buttons: [{ id: 'share', label: 'Share' }] });
@@ -188,7 +193,7 @@
                         //target: ["broadcast"],
                         //target: ["whisper-U"+channelId],
                         target: [msgTarget],
-                        broadcaster_id: authData.channelId,
+                        broadcasterId: authData.channelId,
                         is_global_broadcast: false,
                         message: JSON.stringify(message)
                     })
@@ -251,7 +256,7 @@
 
             const message = {
                 action: 'button_click',
-                button_id: buttonId,
+                buttonId: buttonId,
                 username: authData.userName || 'anonymous',
                 timestamp: new Date().toISOString()
             };
@@ -266,6 +271,7 @@
         }
 
         document.addEventListener('DOMContentLoaded', () => {
+            return; // for now
             updateUI({
                 mainTitle: Twitch.ext.viewer.isLinked
                     ? "Mafia chat game (waiting for streamer)"
