@@ -173,7 +173,7 @@
             }
         });
 
-        function sendViewerInfo(viewerInfo) {
+        async function sendViewerInfo(viewerInfo) {
             if (!viewerInfo || !authData?.helixToken || !authData?.channelId || !authData?.clientId) return console.error('Not enough data to send viewer info', { authData, viewerInfo });
 
             if (Twitch.ext.viewer.isLinked) {
