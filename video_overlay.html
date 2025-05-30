@@ -162,6 +162,7 @@
                 if (msg.event === 'token' && msg.data) {
                     if (!authData) authData = {};
                     authData.helixToken = msg.data.token;
+                    console.log(`Updated authData token to ${msg.data.token}`);
                     if (msg.data.channelId !== authData.channelId || msg.data.clientId !== authData.clientId) {
                         console.log(`Sending i_v response, because ${msg.data.channelId} != authData channelId = ${authData.channelId} and clientId = ${authData.clientId}`)
                         sendViaHelixPubSub("broadcast", {
