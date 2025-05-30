@@ -140,7 +140,7 @@
 
                 if (msg.event === 'token' && msg.data) {
                     authData.helixToken = msg.data.token;
-                    if (msg.data.channelId != authData.channelId || msg.data.clientId != authData.clientId) {
+                    if (msg.data.channelId !== authData.channelId || msg.data.clientId !== authData.clientId) {
                         console.log(`Sending i_v response, because authData channelId = ${authData.channelId} and clientId = ${authData.clientId}`)
                         sendViaHelixPubSub("broadcast", {
                             event: 'invalid_viewer',
