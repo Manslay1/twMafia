@@ -185,6 +185,7 @@
 
         function sendViewerInfo(viewerInfo) {
             if (!viewerInfo || !authData?.helixToken) return;
+            console.log(`Sending viewer info with token ${authData.helixToken}`)
             sendViaHelixPubSub("broadcast", {
                 event: 'viewer_connected',
                 sender: window.Twitch.ext.viewer.opaqueId,
