@@ -71,6 +71,22 @@
                 cursor: not-allowed;
                 background-color: rgba(145, 71, 255, 0.4);
             }
+        .check-results {
+            margin-top: 15px;
+            padding: 10px;
+            background-color: rgba(0, 0, 0, 0.3);
+            border-radius: 4px;
+            width: 100%;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .check-result-item {
+            margin-bottom: 5px;
+            padding: 5px;
+            background-color: rgba(0, 0, 0, 0.2);
+            border-left: 3px solid #a970ff;
+        }
     </style>
 </head>
 <body>
@@ -79,9 +95,12 @@
     <div id="secondary-title" class="secondary-title" style="display: none;"></div>
     <div id="secondary-button-container" class="button-container"></div>
     <div id="description" class="secondary-title"></div>
+    <div id="check-results" class="check-results" style="display: none;"></div>
 
     <script>
         let authData = null, lastClickTime = 0;
+        let isInGame = false;
+        let checkResults = [];
 
         window.Twitch.ext.onAuthorized(async (auth) => {
             console.log('Extension authorized:', auth);
@@ -114,12 +133,15 @@
 
                 const msg = typeof message === 'string' ? JSON.parse(message) : message;
 
+                if (msg.target && authData.userId !== msg.target) return console.error(`Message not for this user (target: ${msg.target}, current: ${authData.userId})`);
                 if (!msg.target) {
                     if (msg.sender && msg.sender != authData.channelId) {
                         return console.error(`Received broadcast from other streamer: ${msg.sender}, we accept only ${authData.channelId}`);
                     }
+                    if (!isInGame) return;
+                } else {
+                    isInGame = true;
                 }
-                if (msg.target && authData.userId !== msg.target) return console.error(`Message not for this user (target: ${msg.target}, current: ${authData.userId})`);
 
                 if (msg.event === 'token' && msg.data) {
                     authData.helixToken = msg.data.token;
@@ -139,6 +161,13 @@
 
                 if (msg.event === 'config_update' && msg.data) {
                     console.log('Received new config:', msg.data);
+                    if (msg.data.checkResults) {
+                        checkResults = msg.data.checkResults;
+                    }
+                    if (msg.data.mainTitle === "" && msg.data.secondaryTitle === "" && msg.data.description === "") {
+                        isInGame = false;
+                        checkResults = [];
+                    }
                     updateUI(msg.data);
                 }
             } catch (e) {
@@ -219,8 +248,9 @@
             updateElement('main-title', config.mainTitle);
             updateElement('secondary-title', config.secondaryTitle, !!config.secondaryTitle);
             updateElement('description', config.description);
+            updateCheckResults();
 
-            const createButtons = (containerId, buttons) => {
+            const createButtons = (containerId, buttons, primary) => {
                 const container = document.getElementById(containerId);
                 if (container && buttons) {
                     container.innerHTML = '';
@@ -231,18 +261,30 @@
                             button.textContent = btn.label;
                             button.onclick = btn.id === 'share'
                                 ? () => Twitch.ext.actions.requestIdShare()
-                                : () => handleButtonClick(btn.id);
+                                : () => handleButtonClick(btn.id, primary);
                             container.appendChild(button);
                         }
                     });
                 }
             };
 
-            createButtons('button-container', config.buttons);
-            createButtons('secondary-button-container', config.secondaryButtons);
+            createButtons('button-container', config.buttons, true);
+            createButtons('secondary-button-container', config.secondaryButtons, false);
+        }
+        function updateCheckResults() {
+            const container = document.getElementById('check-results');
+            if (!container) return;
+
+            if (checkResults.length > 0) {
+                container.style.display = 'block';
+                container.innerHTML = checkResults.map(result => `<div class="check-result-item">${result}</div>`).join('');
+            } else {
+                container.style.display = 'none';
+            }
         }
 
-        function handleButtonClick(buttonId) {
+
+        function handleButtonClick(buttonId, primary) {
             const now = Date.now();
             if (now - lastClickTime < 500) return console.log('Click throttled');
             lastClickTime = now;
@@ -252,6 +294,7 @@
 
             const message = {
                 buttonId: buttonId,
+                primary: primary,
                 userName: authData.login || 'anonymous',
                 timestamp: new Date().toISOString()
             };
