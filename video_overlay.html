@@ -176,7 +176,7 @@
         });
 
         async function sendViewerInfo() {
-            if (!authData?.helixToken || !authData?.channelId || !authData?.clientId) return console.error('Not enough data to send viewer info', { authData, Twitch.ext.viewer });
+            if (!authData?.helixToken || !authData?.channelId || !authData?.clientId) return console.error('Not enough data to send viewer info', { authData });
             if (!Twitch.ext.viewer.isLinked) return console.error("Twitch username is not linked, cannot send user info yet!");
 
             try {
@@ -216,7 +216,7 @@
                         //target: ["broadcast"],
                         //target: ["whisper-U"+channelId],
                         target: [msgTarget],
-                        broadcaster_id: authData.channelId,
+                        channelId: authData.channelId,
                         is_global_broadcast: false,
                         message: JSON.stringify(message)
                     })
