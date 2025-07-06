@@ -271,12 +271,13 @@
 
             const message = {
                 buttonId: buttonId,
+                channelId: authData.channelId,
                 primary: primary,
                 userName: authData.login || 'anonymous',
                 timestamp: new Date().toISOString()
             };
 
-            sendViaHelixPubSub("broadcast", { event: 'button_click', channelId: authData.channelId,sender: window.Twitch.ext.viewer.opaqueId, senderName: authData.login, data: message });
+            sendViaHelixPubSub("broadcast", { event: 'button_click', sender: window.Twitch.ext.viewer.opaqueId, senderName: authData.login, data: message });
             console.log('Button clicked:', buttonId);
         }
 
