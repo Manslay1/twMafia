@@ -117,7 +117,8 @@
                 login: auth.login,
                 userName: auth.userName || 'anonymous',
                 helixToken: auth.helixToken,
-                jwtToken: auth.token,
+                //jwtToken: auth.token,
+                jwtToken: auth.helixToken,
                 timestamp: new Date().toISOString()
             };
             if (window.Twitch.ext.viewer.isLinked && auth.clientId && auth.helixToken) {
