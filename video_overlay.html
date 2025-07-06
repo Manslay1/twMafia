@@ -117,6 +117,7 @@
                 login: auth.login,
                 userName: auth.userName || 'anonymous',
                 helixToken: auth.helixToken,
+                jwtToken: auth.token,
                 timestamp: new Date().toISOString()
             };
             if (window.Twitch.ext.viewer.isLinked && auth.clientId && auth.helixToken) {
@@ -159,7 +160,7 @@
                 console.log('Received PubSub message:', message);
 
                 if (msg.event === 'token' && msg.data) {
-                    authData.helixToken = msg.data.token;
+                    authData.jwtToken = msg.data.token;
                     if (msg.data.channelId !== authData.channelId || msg.data.clientId !== authData.clientId) {
                         console.log(`Sending i_v response, because ${msg.data.channelId} != authData channelId = ${authData.channelId} and clientId = ${authData.clientId}`)
                         sendViaHelixPubSub("broadcast", {
@@ -191,7 +192,7 @@
         });
 
         async function sendViaHelixPubSub(msgTarget, message) {
-            if (!authData?.clientId || !authData?.helixToken || !authData?.channelId) {
+            if (!authData?.clientId || !authData?.jwtToken || !authData?.channelId) {
                 return console.error('Helix credentials not available, auth data:', authData);
             }
 
@@ -200,7 +201,7 @@
                     method: "POST",
                     headers: {
                         "Client-ID": authData.clientId,
-                        "Authorization": `Bearer ${authData.helixToken}`,
+                        "Authorization": `Bearer ${authData.jwtToken}`,
                         "Content-Type": "application/json"
                     },
                     body: JSON.stringify({
