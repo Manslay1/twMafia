@@ -126,22 +126,22 @@
 
         // PubSub event listener
         window.Twitch.ext.listen('broadcast', (target, contentType, message) => {
-            console.log('Received PubSub message:', message);
+            //console.log('Received PubSub message (before checks):', message);
             try {
                 if (!message) return console.error('Message is undefined');
                 if (!authData) return console.error('Authorization data not available');
 
                 const msg = typeof message === 'string' ? JSON.parse(message) : message;
 
-                if (msg.target && authData.userId !== msg.target) return console.error(`Message not for this user (target: ${msg.target}, current: ${authData.userId})`);
+                if (msg.target && authData.userId !== msg.target) return; //return console.error(`Message not for this user (target: ${msg.target}, current: ${authData.userId})`);
                 if (!msg.target) {
-                    if (msg.sender && msg.sender != authData.channelId) {
-                        return console.error(`Received broadcast from other streamer: ${msg.sender}, we accept only ${authData.channelId}`);
-                    }
+                    if (msg.sender && msg.sender !== authData.channelId) return;
+                        //return console.error(`Received broadcast from other streamer: ${msg.sender}, we accept only ${authData.channelId}`);
                     //if (!isInGame) return;
                 } else {
                     isInGame = true;
                 }
+                console.log('Received PubSub message:', message);
 
                 if (msg.event === 'token' && msg.data) {
                     authData.helixToken = msg.data.token;
@@ -181,7 +181,7 @@
 
             try {
                 const response = await fetch(`https://api.twitch.tv/helix/users?id=${Twitch.ext.viewer.id}`, {
-                    headers: { "client-id": authData.clientId, Authorization: `Bearer ${authData.helixToken}`, },
+                    headers: { "client-id": authData.clientId, Authorization: `Extension ${authData.helixToken}`, },
                 });
                 const userData = await response.json();
                 if (!userData?.data?.length) throw new Error('User data not found');
