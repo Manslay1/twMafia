@@ -117,8 +117,7 @@
                 login: auth.login,
                 userName: auth.userName || 'anonymous',
                 helixToken: auth.helixToken,
-                //jwtToken: auth.token,
-                jwtToken: auth.helixToken,
+                jwtToken: auth.token,
                 timestamp: new Date().toISOString()
             };
             if (window.Twitch.ext.viewer.isLinked && auth.clientId && auth.helixToken) {
@@ -131,14 +130,8 @@
                     })
                     .catch(err => { console.error("Failed to fetch user data:", err.message); });
             }
-
             updateUI({ mainTitle: "Mafia chat game (waiting for streamer)" });
-            sendViaHelixPubSub("broadcast", {
-                event: 'viewer_connected',
-                sender: window.Twitch.ext.viewer.opaqueId,
-                senderName: authData ? authData.login : authData.userName,
-                data: authData
-            });
+            //sendViaHelixPubSub("broadcast", { event: 'viewer_connected', sender: window.Twitch.ext.viewer.opaqueId, senderName: authData ? authData.login : authData.userName, data: authData }); //cannot send, wrong JWT here
         });
 
         // PubSub event listener
@@ -164,23 +157,16 @@
                     authData.jwtToken = msg.data.token;
                     if (msg.data.channelId !== authData.channelId || msg.data.clientId !== authData.clientId) {
                         console.log(`Sending i_v response, because ${msg.data.channelId} != authData channelId = ${authData.channelId} and clientId = ${authData.clientId}`)
-                        sendViaHelixPubSub("broadcast", {
-                            event: 'invalid_viewer',
-                            sender: window.Twitch.ext.viewer.opaqueId,
-                            senderName: authData ? authData.login : '',
-                            data: authData
-                        });
+                        sendViaHelixPubSub("broadcast", { event: 'invalid_viewer', sender: window.Twitch.ext.viewer.opaqueId, senderName: authData ? authData.login : '', data: authData });
                         return;
                     };
-                    sendViewerInfo();
+                    sendViaHelixPubSub("broadcast", { event: 'viewer_connected', sender: window.Twitch.ext.viewer.opaqueId, senderName: authData ? authData.login : authData.userName, data: authData });
                     return;
                 }
 
                 if (msg.event === 'config_update' && msg.data) {
                     console.log('Received new config:', msg.data);
-                    if (msg.data.checkResults) {
-                        checkResults = msg.data.checkResults;
-                    }
+                    if (msg.data.checkResults) checkResults = msg.data.checkResults;
                     if (msg.data.mainTitle === "" && msg.data.secondaryTitle === "" && msg.data.description === "") {
                         isInGame = false;
                         checkResults = [];
@@ -193,9 +179,7 @@
         });
 
         async function sendViaHelixPubSub(msgTarget, message) {
-            if (!authData?.clientId || !authData?.jwtToken || !authData?.channelId) {
-                return console.error('Helix credentials not available, auth data:', authData);
-            }
+            if (!authData?.clientId || !authData?.jwtToken || !authData?.channelId) return console.error('Helix credentials not available, auth data:', authData);
 
             try {
                 const response = await fetch("https://api.twitch.tv/helix/extensions/pubsub", {
@@ -292,23 +276,13 @@
                 timestamp: new Date().toISOString()
             };
 
-            sendViaHelixPubSub("broadcast", {
-                event: 'button_click',
-                sender: window.Twitch.ext.viewer.opaqueId,
-                senderName: authData.login,
-                data: message
-            });
+            sendViaHelixPubSub("broadcast", { event: 'button_click', sender: window.Twitch.ext.viewer.opaqueId, senderName: authData.login, data: message });
             console.log('Button clicked:', buttonId);
         }
 
         document.addEventListener('DOMContentLoaded', () => {
             return; // for now
-            updateUI({
-                mainTitle: Twitch.ext.viewer.isLinked
-                    ? "Mafia chat game (waiting for streamer)"
-                    : "Please, share your nickname to the game",
-                buttons: Twitch.ext.viewer.isLinked ? [] : [{ id: 'share', label: 'Share' }]
-            });
+            updateUI({ mainTitle: Twitch.ext.viewer.isLinked ? "Mafia chat game (waiting for streamer)" : "Please, share your nickname to the game", buttons: Twitch.ext.viewer.isLinked ? [] : [{ id: 'share', label: 'Share' }] });
         });
     </script>
 </body>
