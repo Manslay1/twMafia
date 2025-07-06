@@ -217,7 +217,7 @@
             const updateElement = (id, content, isVisible) => {
                 const el = document.getElementById(id);
                 if (el) {
-                    if (content) el.textContent = content;
+                    el.textContent = content;
                     if (isVisible !== undefined) el.style.display = isVisible ? 'block' : 'none';
                 }
             };
@@ -229,8 +229,8 @@
 
             const createButtons = (containerId, buttons, primary) => {
                 const container = document.getElementById(containerId);
+                container?.innerHTML = '';
                 if (container && buttons) {
-                    container.innerHTML = '';
                     buttons.forEach(btn => {
                         if (btn.id && btn.label) {
                             const button = document.createElement('button');
@@ -278,7 +278,7 @@
             };
 
             sendViaHelixPubSub("broadcast", { event: 'button_click', sender: window.Twitch.ext.viewer.opaqueId, senderName: authData.login, data: message });
-            console.log('Button clicked:', buttonId);
+            //console.log('Button clicked:', buttonId);
         }
 
         document.addEventListener('DOMContentLoaded', () => {
