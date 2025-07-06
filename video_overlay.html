@@ -138,7 +138,7 @@
                     if (msg.sender && msg.sender != authData.channelId) {
                         return console.error(`Received broadcast from other streamer: ${msg.sender}, we accept only ${authData.channelId}`);
                     }
-                    if (!isInGame) return;
+                    //if (!isInGame) return;
                 } else {
                     isInGame = true;
                 }
