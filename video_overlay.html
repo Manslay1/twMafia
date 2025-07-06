@@ -181,9 +181,11 @@
 
             try {
                 const response = await fetch(`https://api.twitch.tv/helix/users?id=${Twitch.ext.viewer.id}`, {
-                    headers: { "client-id": authData.clientId, Authorization: `Extension ${authData.helixToken}`, },
+                    headers: { "client-id": authData.clientId, Authorization: `Bearer ${authData.helixToken}`, },
                 });
-                const userName = (await response.json()).data[0]?.display_name;
+                const userData = await response.json();
+                if (!userData?.data?.length) throw new Error('User data not found');
+                const userName = userData.data[0].display_name;
                 authData.login = userName;
                 console.log("Username:", userName);
             } catch (e) {
